@@ -172,7 +172,8 @@
         },
         body: body ? JSON.stringify(body) : null
       });
-      return res.json();
+      const text = await res.text();
+      return text ? JSON.parse(text) : {};
     }
 
     async function loadSlots(dateStr) {
