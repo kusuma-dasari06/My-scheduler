@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyScheduler - Book a Meeting</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0F172A; font-family: Arial, sans-serif; color: #F1F5F9; }
+
+    .header {
+      background: #1E2938;
+      border-bottom: 1px solid #334155;
+      padding: 16px 24px;
+    }
+    .header h1 { color: #6366F1; font-size: 20px; }
+    .header p { color: #94A3B8; font-size: 14px; margin-top: 4px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr 320px;
+      height: calc(100vh - 70px);
+    }
+
+    .panel {
+      border-right: 1px solid #334155;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .panel:last-child { border-right: none; }
+    .panel h2 { font-size: 16px; color: #94A3B8; margin-bottom: 16px; }
+
+    /* Calendar */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .calendar-header button {
+      background: #334155;
+      color: #F1F5F9;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .day-name { color: #94A3B8; font-size: 12px; padding: 4px; }
+    .day {
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .day:hover { background: #334155; }
+    .day.today { background: #6366F1; color: white; }
+    .day.selected { background: #4F46E5; color: white; }
+    .day.past { color: #475569; cursor: default; pointer-events: none; }
+
+    /* Timeline */
+    .time-slot {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .time-slot.booked {
+      background: #1E2938;
+      border: 1px solid #334155;
+      color: #475569;
+      cursor: default;
+    }
+    .time-slot.available {
+      background: #1E2938;
+      border: 1px dashed #334155;
+      color: #94A3B8;
+    }
+    .time-slot.available:hover { border-color: #6366F1; color: #F1F5F9; }
+
+    /* Chat */
+    .chat-messages {
+      height: calc(100vh - 200px);
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+    .message { margin-bottom: 12px; display: flex; flex-direction: column; }
+    .message.user { align-items: flex-end; }
+    .message.ai { align-items: flex-start; }
+    .message-bubble {
+      padding: 10px 14px;
+      border-radius: 12px;
+      max-width: 85%;
+      font-size: 14px;
+    }
+    .message.user .message-bubble { background: #6366F1; color: white; }
+    .message.ai .message-bubble { background: #1E2938; color: #F1F5F9; }
+    .chat-input { display: flex; gap: 8px; }
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      background: #1E2938;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #F1F5F9;
+      font-size: 14px;
+    }
+    .chat-input button {
+      padding: 10px 16px;
+      background: #6366F1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel { border-right: none; border-bottom: 1px solid #334155; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>MyScheduler</h1>
+    <p>Select a date and time to request a meeting</p>
+  </div>
+
+  <div class="layout">
+    <!-- Panel 1: Calendar -->
+    <div class="panel">
+      <h2>Select a Date</h2>
+      <div class="calendar-header">
+        <button onclick="changeMonth(-1)">&#8592;</button>
+        <span id="monthYear"></span>
+        <button onclick="changeMonth(1)">&#8594;</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <!-- Panel 2: Available Slots -->
+    <div class="panel">
+      <h2>Available Times for <span id="selectedDateLabel">—</span></h2>
+      <div id="timesContainer">
+        <p style="color:#94A3B8">Select a date to see availability.</p>
+      </div>
+    </div>
+
+    <!-- Panel 3: Chat -->
+    <div class="panel">
+      <h2>AI Assistant</h2>
+      <div class="chat-messages" id="chatMessages">
+        <div class="message ai">
+          <div class="message-bubble">Hi! I can help you check availability and book a meeting. What date works for you?</div>
+        </div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Ask about availability..." onkeydown="if(event.key==='Enter') sendMessage()" />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentDate = new Date();
+    let selectedDate = null;
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('monthYear').textContent = monthNames[month] + ' ' + year;
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      dayNames.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'day-name';
+        el.textContent = d;
+        grid.appendChild(el);
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+
+      for (let i = 0; i < firstDay; i++) {
+        const el = document.createElement('div');
+        el.className = 'day empty';
+        grid.appendChild(el);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const el = document.createElement('div');
+        el.className = 'day';
+        el.textContent = d;
+
+        const thisDate = new Date(year, month, d);
+        if (thisDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+          el.classList.add('past');
+        }
+
+        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) {
+          el.classList.add('today');
+        }
+
+        el.onclick = () => selectDate(year, month, d);
+        grid.appendChild(el);
+      }
+    }
+
+    function changeMonth(dir) {
+      currentDate.setMonth(currentDate.getMonth() + dir);
+      renderCalendar();
+    }
+
+    function selectDate(year, month, day) {
+      selectedDate = new Date(year, month, day);
+      document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
+      document.getElementById('timesContainer').innerHTML = '<p style="color:#94A3B8">Loading availability...</p>';
+      renderCalendar();
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const container = document.getElementById('chatMessages');
+      container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
+      input.value = '';
+
+      setTimeout(() => {
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">Let me check the availability for you... (AI coming soon!)</div></div>`;
+        container.scrollTop = container.scrollHeight;
+      }, 800);
+    }
+
+    renderCalendar();
+  </script>
+</body>
+</html>
