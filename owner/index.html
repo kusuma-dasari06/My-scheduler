@@ -17,139 +17,73 @@
       align-items: center;
     }
     .header h1 { color: #6366F1; font-size: 20px; }
-    .header-btns { display: flex; gap: 12px; }
-    .btn {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-    }
+    .header-btns { display: flex; gap: 12px; align-items: center; }
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; }
     .btn-primary { background: #6366F1; color: white; }
     .btn-secondary { background: #334155; color: #F1F5F9; }
+    .badge { background: #EF4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; margin-left: 4px; }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 320px 1fr 320px;
-      height: calc(100vh - 60px);
-    }
-
-    .panel {
-      border-right: 1px solid #334155;
-      padding: 16px;
-      overflow-y: auto;
-    }
+    .layout { display: grid; grid-template-columns: 320px 1fr 320px; height: calc(100vh - 60px); }
+    .panel { border-right: 1px solid #334155; padding: 16px; overflow-y: auto; }
     .panel:last-child { border-right: none; }
     .panel h2 { font-size: 16px; color: #94A3B8; margin-bottom: 16px; }
 
-    /* Calendar */
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .calendar-header button {
-      background: #334155;
-      color: #F1F5F9;
-      border: none;
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      text-align: center;
-    }
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .calendar-header button { background: #334155; color: #F1F5F9; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
     .day-name { color: #94A3B8; font-size: 12px; padding: 4px; }
-    .day {
-      padding: 6px;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-    }
+    .day { padding: 6px; border-radius: 6px; font-size: 13px; cursor: pointer; }
     .day:hover { background: #334155; }
     .day.today { background: #6366F1; color: white; }
     .day.selected { background: #4F46E5; color: white; }
     .day.empty { cursor: default; }
-    .day.has-slot::after {
-      content: '';
-      display: block;
-      width: 4px;
-      height: 4px;
-      background: #22C55E;
-      border-radius: 50%;
-      margin: 2px auto 0;
-    }
 
-    /* Slots */
-    .slot-card {
-      background: #1E2938;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 12px;
-      border-left: 4px solid #6366F1;
-    }
-    .slot-card.completed { border-left-color: #22C55E; }
-    .slot-card.cancelled { border-left-color: #EF4444; }
+    .slot-card { background: #1E2938; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 4px solid #6366F1; }
+    .slot-card.completed { border-left-color: #22C55E; opacity: 0.7; }
+    .slot-card.cancelled { border-left-color: #EF4444; opacity: 0.7; }
     .slot-card.rescheduled { border-left-color: #F59E0B; }
     .slot-title { font-weight: bold; margin-bottom: 4px; }
-    .slot-time { color: #94A3B8; font-size: 13px; margin-bottom: 8px; }
+    .slot-time { color: #94A3B8; font-size: 13px; margin-bottom: 4px; }
+    .slot-category { display: inline-block; background: #334155; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-bottom: 8px; }
     .slot-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-    .slot-actions button {
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-size: 12px;
-    }
+    .slot-actions button { padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; }
     .btn-complete { background: #22C55E; color: white; }
     .btn-edit { background: #3B82F6; color: white; }
     .btn-reschedule { background: #F59E0B; color: white; }
     .btn-cancel { background: #EF4444; color: white; }
 
-    /* Chat */
-    .chat-messages {
-      height: calc(100vh - 200px);
-      overflow-y: auto;
-      margin-bottom: 12px;
-    }
-    .message {
-      margin-bottom: 12px;
-      display: flex;
-      flex-direction: column;
-    }
+    .status-counts { display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #334155; }
+    .count-item { text-align: center; flex: 1; }
+    .count-num { font-size: 24px; font-weight: bold; }
+    .count-label { font-size: 11px; color: #94A3B8; }
+    .count-item.completed .count-num { color: #22C55E; }
+    .count-item.rescheduled .count-num { color: #F59E0B; }
+    .count-item.cancelled .count-num { color: #EF4444; }
+
+    .chat-messages { height: calc(100vh - 220px); overflow-y: auto; margin-bottom: 12px; }
+    .message { margin-bottom: 12px; display: flex; flex-direction: column; }
     .message.user { align-items: flex-end; }
     .message.ai { align-items: flex-start; }
-    .message-bubble {
-      padding: 10px 14px;
-      border-radius: 12px;
-      max-width: 85%;
-      font-size: 14px;
-    }
+    .message-bubble { padding: 10px 14px; border-radius: 12px; max-width: 85%; font-size: 14px; }
     .message.user .message-bubble { background: #6366F1; color: white; }
     .message.ai .message-bubble { background: #1E2938; color: #F1F5F9; }
     .chat-input { display: flex; gap: 8px; }
-    .chat-input input {
-      flex: 1;
-      padding: 10px;
-      background: #1E2938;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      color: #F1F5F9;
-      font-size: 14px;
-    }
-    .chat-input button {
-      padding: 10px 16px;
-      background: #6366F1;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    .chat-input input { flex: 1; padding: 10px; background: #1E2938; border: 1px solid #334155; border-radius: 8px; color: #F1F5F9; font-size: 14px; }
+    .chat-input button { padding: 10px 16px; background: #6366F1; color: white; border: none; border-radius: 8px; cursor: pointer; }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #1E2938; border: 1px solid #334155; border-radius: 12px; padding: 24px; width: 480px; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { margin-bottom: 16px; color: #F1F5F9; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; color: #94A3B8; font-size: 13px; margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; background: #0F172A; border: 1px solid #334155; border-radius: 8px; color: #F1F5F9; font-size: 14px; }
+    .form-group textarea { height: 80px; resize: vertical; }
+    .word-count { font-size: 11px; color: #94A3B8; margin-top: 4px; }
+    .word-count.error { color: #EF4444; }
+    .modal-btns { display: flex; gap: 12px; justify-content: flex-end; }
+    .error-msg { color: #EF4444; font-size: 13px; margin-bottom: 12px; display: none; }
 
     @media (max-width: 768px) {
       .layout { grid-template-columns: 1fr; }
@@ -163,13 +97,12 @@
     <h1>MyScheduler</h1>
     <div class="header-btns">
       <button class="btn btn-secondary" onclick="copyBookingLink()">Copy Booking Link</button>
-      <button class="btn btn-secondary" id="requestsBtn">Requests <span id="badge"></span></button>
+      <button class="btn btn-secondary" onclick="alert('Requests inbox coming soon!')">Requests <span class="badge" id="badge">0</span></button>
       <button class="btn btn-primary" onclick="openAddSlot()">+ Add to Schedule</button>
     </div>
   </div>
 
   <div class="layout">
-    <!-- Panel 1: Calendar -->
     <div class="panel">
       <h2>Calendar</h2>
       <div class="calendar-header">
@@ -180,21 +113,20 @@
       <div class="calendar-grid" id="calendarGrid"></div>
     </div>
 
-    <!-- Panel 2: Day Schedule -->
     <div class="panel">
       <h2>Schedule for <span id="selectedDateLabel">Today</span></h2>
-      <div id="slotsContainer">
-        <p style="color:#94A3B8">Select a date to view slots.</p>
+      <div id="slotsContainer"><p style="color:#94A3B8">Select a date to view slots.</p></div>
+      <div class="status-counts">
+        <div class="count-item completed"><div class="count-num" id="countCompleted">0</div><div class="count-label">Completed</div></div>
+        <div class="count-item rescheduled"><div class="count-num" id="countRescheduled">0</div><div class="count-label">Rescheduled</div></div>
+        <div class="count-item cancelled"><div class="count-num" id="countCancelled">0</div><div class="count-label">Cancelled</div></div>
       </div>
     </div>
 
-    <!-- Panel 3: Chat -->
     <div class="panel">
       <h2>AI Assistant</h2>
       <div class="chat-messages" id="chatMessages">
-        <div class="message ai">
-          <div class="message-bubble">Hi! I'm your scheduling assistant. Ask me anything about your schedule!</div>
-        </div>
+        <div class="message ai"><div class="message-bubble">Hi! I'm your scheduling assistant. Ask me anything about your schedule!</div></div>
       </div>
       <div class="chat-input">
         <input type="text" id="chatInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter') sendMessage()" />
@@ -203,95 +135,225 @@
     </div>
   </div>
 
+  <!-- Add Slot Modal -->
+  <div class="modal-overlay" id="addSlotModal">
+    <div class="modal">
+      <h3>Add to Schedule</h3>
+      <div class="error-msg" id="slotError"></div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="slotCategory">
+          <option>Meeting</option>
+          <option>Brainstorming</option>
+          <option>Event Participation</option>
+          <option>Learnings</option>
+          <option>Others</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="slotTitle" placeholder="Enter title" />
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="slotDate" />
+      </div>
+      <div class="form-group">
+        <label>Start Time (IST, min 5:00 AM)</label>
+        <input type="time" id="slotStart" min="05:00" max="23:00" />
+      </div>
+      <div class="form-group">
+        <label>End Time (IST, max 11:00 PM)</label>
+        <input type="time" id="slotEnd" min="05:00" max="23:00" />
+      </div>
+      <div class="form-group">
+        <label>Description (min 25 words)</label>
+        <textarea id="slotDesc" oninput="updateWordCount()" placeholder="Describe this slot..."></textarea>
+        <div class="word-count" id="wordCount">0 / 25 words minimum</div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeAddSlot()">Cancel</button>
+        <button class="btn btn-primary" id="submitSlotBtn" onclick="submitSlot()">Add Slot</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Auth check
-    if (!sessionStorage.getItem('auth')) {
-      window.location.href = '/';
-    }
+    const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
+
+    if (!sessionStorage.getItem('auth')) window.location.href = '/';
 
     let currentDate = new Date();
     let selectedDate = null;
+    let allSlots = [];
+
+    async function supabaseFetch(path, method = 'GET', body = null) {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+        method,
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': method === 'POST' ? 'return=representation' : ''
+        },
+        body: body ? JSON.stringify(body) : null
+      });
+      return res.json();
+    }
+
+    async function loadSlots(dateStr) {
+      const data = await supabaseFetch('schedules?date=eq.' + dateStr + '&order=start_time');
+      allSlots = data;
+      renderSlots(data);
+      loadStatusCounts();
+    }
+
+    async function loadStatusCounts() {
+      const completed = await supabaseFetch('schedules?status=eq.completed&select=id');
+      const rescheduled = await supabaseFetch('schedules?status=eq.rescheduled&select=id');
+      const cancelled = await supabaseFetch('schedules?status=eq.cancelled&select=id');
+      document.getElementById('countCompleted').textContent = completed.length;
+      document.getElementById('countRescheduled').textContent = rescheduled.length;
+      document.getElementById('countCancelled').textContent = cancelled.length;
+    }
+
+    function toIST(timeStr) { return timeStr ? timeStr.slice(0,5) : ''; }
+
+    function renderSlots(slots) {
+      const container = document.getElementById('slotsContainer');
+      if (!slots.length) { container.innerHTML = '<p style="color:#94A3B8">No slots for this date.</p>'; return; }
+      container.innerHTML = slots.map(s => `
+        <div class="slot-card ${s.status}">
+          <div class="slot-title">${s.title}</div>
+          <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
+          <div class="slot-category">${s.category}</div>
+          <div class="slot-actions">
+            ${s.status === 'upcoming' ? `
+              <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
+              <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
+              <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
+              <button class="btn-cancel" onclick="cancelSlot('${s.id}')">Cancel</button>
+            ` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function updateStatus(id, status) {
+      if (!confirm('Are you sure?')) return;
+      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status });
+      if (selectedDate) loadSlots(selectedDate.toISOString().split('T')[0]);
+    }
+
+    async function cancelSlot(id) {
+      if (!confirm('Cancel this slot?')) return;
+      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status: 'cancelled' });
+      if (selectedDate) loadSlots(selectedDate.toISOString().split('T')[0]);
+    }
+
+    function editSlot(id) { alert('Edit coming soon!'); }
+    function rescheduleSlot(id) { alert('Reschedule coming soon!'); }
 
     function renderCalendar() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
       document.getElementById('monthYear').textContent = monthNames[month] + ' ' + year;
-
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
-
-      const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      dayNames.forEach(d => {
+      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
         const el = document.createElement('div');
         el.className = 'day-name';
         el.textContent = d;
         grid.appendChild(el);
       });
-
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const today = new Date();
-
       for (let i = 0; i < firstDay; i++) {
-        const el = document.createElement('div');
-        el.className = 'day empty';
-        grid.appendChild(el);
+        const el = document.createElement('div'); el.className = 'day empty'; grid.appendChild(el);
       }
-
       for (let d = 1; d <= daysInMonth; d++) {
         const el = document.createElement('div');
         el.className = 'day';
         el.textContent = d;
-
-        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) {
-          el.classList.add('today');
-        }
-
+        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) el.classList.add('today');
+        if (selectedDate && selectedDate.getFullYear() === year && selectedDate.getMonth() === month && selectedDate.getDate() === d) el.classList.add('selected');
         el.onclick = () => selectDate(year, month, d);
         grid.appendChild(el);
       }
     }
 
-    function changeMonth(dir) {
-      currentDate.setMonth(currentDate.getMonth() + dir);
-      renderCalendar();
-    }
+    function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); renderCalendar(); }
 
     function selectDate(year, month, day) {
       selectedDate = new Date(year, month, day);
-      const label = selectedDate.toDateString();
-      document.getElementById('selectedDateLabel').textContent = label;
-      document.getElementById('slotsContainer').innerHTML = '<p style="color:#94A3B8">Loading slots...</p>';
+      document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
+      document.getElementById('slotDate').value = selectedDate.toISOString().split('T')[0];
+      loadSlots(selectedDate.toISOString().split('T')[0]);
       renderCalendar();
     }
 
     function copyBookingLink() {
-      const url = window.location.origin + '/book';
-      navigator.clipboard.writeText(url);
+      navigator.clipboard.writeText(window.location.origin + '/book');
       alert('Link copied!');
+    }
+
+    function openAddSlot() { document.getElementById('addSlotModal').classList.add('active'); }
+    function closeAddSlot() { document.getElementById('addSlotModal').classList.remove('active'); }
+
+    function updateWordCount() {
+      const words = document.getElementById('slotDesc').value.trim().split(/\s+/).filter(w => w).length;
+      const el = document.getElementById('wordCount');
+      el.textContent = words + ' / 25 words minimum';
+      el.className = 'word-count' + (words < 25 ? ' error' : '');
+    }
+
+    async function submitSlot() {
+      const title = document.getElementById('slotTitle').value.trim();
+      const date = document.getElementById('slotDate').value;
+      const start = document.getElementById('slotStart').value;
+      const end = document.getElementById('slotEnd').value;
+      const desc = document.getElementById('slotDesc').value.trim();
+      const category = document.getElementById('slotCategory').value;
+      const words = desc.split(/\s+/).filter(w => w).length;
+      const errEl = document.getElementById('slotError');
+
+      if (!title || !date || !start || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+      if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
+      if (start >= end) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+      if (start < '05:00') { errEl.style.display='block'; errEl.textContent='Start time must be after 5:00 AM.'; return; }
+      if (end > '23:00') { errEl.style.display='block'; errEl.textContent='End time must be before 11:00 PM.'; return; }
+
+      const existing = await supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled');
+      const overlap = existing.find(s => !(end <= s.start_time || start >= s.end_time));
+      if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
+
+      errEl.style.display = 'none';
+      await supabaseFetch('schedules', 'POST', { title, date, start_time: start, end_time: end, description: desc, category, status: 'upcoming', created_by: 'owner' });
+      closeAddSlot();
+      if (selectedDate) loadSlots(selectedDate.toISOString().split('T')[0]);
     }
 
     function sendMessage() {
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
       if (!msg) return;
-
       const container = document.getElementById('chatMessages');
       container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
       input.value = '';
-
       setTimeout(() => {
-        container.innerHTML += `<div class="message ai"><div class="message-bubble">I'm connecting to your schedule... (AI coming soon!)</div></div>`;
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">AI integration coming soon!</div></div>`;
         container.scrollTop = container.scrollHeight;
       }, 800);
     }
 
-    function openAddSlot() {
-      alert('Add Slot modal coming soon!');
-    }
-
     renderCalendar();
+    loadStatusCounts();
+
+    const today = new Date();
+    selectDate(today.getFullYear(), today.getMonth(), today.getDate());
   </script>
 </body>
 </html>
