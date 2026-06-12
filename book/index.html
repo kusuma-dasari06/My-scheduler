@@ -214,32 +214,42 @@
     }
 
     function renderTimeline(bookedSlots, dateStr) {
-      const container = document.getElementById('timesContainer');
-      if (!bookedSlots.length) {
-        container.innerHTML = '<p style="color:#94A3B8">No available slots on this date — please try another date.</p>';
-        return;
-      }
-      let html = '';
-      bookedSlots.forEach(slot => {
-        html += `<div class="time-slot booked">🔒 Booked: ${slot.start_time.slice(0,5)} — ${slot.end_time.slice(0,5)}</div>`;
-      });
-      html += `<div class="time-slot available" onclick="openBookingModal('${dateStr}', '${bookedSlots[0].end_time.slice(0,5)}')">✅ Click to request a meeting on this date</div>`;
-      container.innerHTML = html;
-    }
+  const container = document.getElementById('timesContainer');
+  container.innerHTML = '';
+  let html = '';
+  let hasAvailable = false;
 
-    function openBookingModal(date, startTime) {
-      selectedStartTime = startTime;
-      document.getElementById('bookingDate').value = date;
-      document.getElementById('bookingStart').value = startTime;
-      document.getElementById('bookingEnd').value = '';
-      document.getElementById('visitorName').value = '';
-      document.getElementById('visitorEmail').value = '';
-      document.getElementById('bookingDesc').value = '';
-      document.getElementById('bookingError').style.display = 'none';
-      document.getElementById('bookingSuccess').style.display = 'none';
-      document.getElementById('bookingWordCount').textContent = '0 / 25 words minimum';
-      document.getElementById('bookingModal').classList.add('active');
+  for (let h = 5; h < 23; h++) {
+    const startStr = String(h).padStart(2,'0') + ':00:00';
+    const endStr = String(h+1).padStart(2,'0') + ':00:00';
+
+    const isBooked = bookedSlots.some(s =>
+      s.start_time < endStr && s.end_time > startStr
+    );
+
+    if (isBooked) {
+      html += `<div class="time-slot booked">🔒 Booked: ${startStr.slice(0,5)} — ${endStr.slice(0,5)}</div>`;
+    } else {
+      hasAvailable = true;
+      html += `<div class="time-slot available" onclick="openBookingModal('${dateStr}', '${startStr}', '${endStr}')">✅ ${startStr.slice(0,5)} — ${endStr.slice(0,5)} Available</div>`;
     }
+  }
+
+  if (!hasAvailable) {
+    html = '<p style="color:#94A3B8">No available slots on this date.</p>';
+  }
+  container.innerHTML = html;
+}
+
+    function openBookingModal(date, startTime, endTime) {
+  selectedStartTime = startTime;
+  document.getElementById('bookingDate').value = date;
+  document.getElementById('bookingStart').value = startTime.slice(0,5);
+  document.getElementById('bookingEnd').value = endTime.slice(0,5);
+  document.getElementById('visitorName').value = '';
+  document.getElementById('visitorEmail').value = '';
+  document.getElementById('bookingModal').classList.add('active');
+}
 
     function closeBookingModal() { document.getElementById('bookingModal').classList.remove('active'); }
 
