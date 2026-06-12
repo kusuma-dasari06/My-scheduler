@@ -7,134 +7,73 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0F172A; font-family: Arial, sans-serif; color: #F1F5F9; }
-
-    .header {
-      background: #1E2938;
-      border-bottom: 1px solid #334155;
-      padding: 16px 24px;
-    }
+    .header { background: #1E2938; border-bottom: 1px solid #334155; padding: 16px 24px; }
     .header h1 { color: #6366F1; font-size: 20px; }
     .header p { color: #94A3B8; font-size: 14px; margin-top: 4px; }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 320px 1fr 320px;
-      height: calc(100vh - 70px);
-    }
-
-    .panel {
-      border-right: 1px solid #334155;
-      padding: 16px;
-      overflow-y: auto;
-    }
+    .layout { display: grid; grid-template-columns: 320px 1fr 320px; height: calc(100vh - 70px); }
+    .panel { border-right: 1px solid #334155; padding: 16px; overflow-y: auto; }
     .panel:last-child { border-right: none; }
     .panel h2 { font-size: 16px; color: #94A3B8; margin-bottom: 16px; }
-
-    /* Calendar */
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .calendar-header button {
-      background: #334155;
-      color: #F1F5F9;
-      border: none;
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      text-align: center;
-    }
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .calendar-header button { background: #334155; color: #F1F5F9; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
     .day-name { color: #94A3B8; font-size: 12px; padding: 4px; }
-    .day {
-      padding: 6px;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-    }
+    .day { padding: 6px; border-radius: 6px; font-size: 13px; cursor: pointer; }
     .day:hover { background: #334155; }
     .day.today { background: #6366F1; color: white; }
     .day.selected { background: #4F46E5; color: white; }
     .day.past { color: #475569; cursor: default; pointer-events: none; }
-
-    /* Timeline */
-    .time-slot {
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .time-slot.booked {
-      background: #1E2938;
-      border: 1px solid #334155;
-      color: #475569;
-      cursor: default;
-    }
-    .time-slot.available {
-      background: #1E2938;
-      border: 1px dashed #334155;
-      color: #94A3B8;
-    }
-    .time-slot.available:hover { border-color: #6366F1; color: #F1F5F9; }
-
-    /* Chat */
-    .chat-messages {
-      height: calc(100vh - 200px);
-      overflow-y: auto;
-      margin-bottom: 12px;
-    }
+    .time-slot { padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+    .time-slot.booked { background: #1E2938; border: 1px solid #334155; color: #475569; }
+    .time-slot.available { background: #1E2938; border: 1px dashed #6366F1; color: #94A3B8; cursor: pointer; }
+    .time-slot.available:hover { border-color: #6366F1; color: #F1F5F9; background: #1E3A5F; }
+    .past-bookings-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #334155; }
+    .past-bookings-section h3 { font-size: 14px; color: #94A3B8; margin-bottom: 12px; }
+    .past-input { display: flex; gap: 8px; margin-bottom: 12px; }
+    .past-input input { flex: 1; padding: 8px; background: #0F172A; border: 1px solid #334155; border-radius: 8px; color: #F1F5F9; font-size: 13px; }
+    .past-input button { padding: 8px 14px; background: #334155; color: #F1F5F9; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+    .booking-card { background: #1E2938; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+    .booking-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-bottom: 6px; }
+    .status-pending { background: #F59E0B22; color: #F59E0B; }
+    .status-accepted { background: #22C55E22; color: #22C55E; }
+    .status-declined { background: #EF444422; color: #EF4444; }
+    .status-reschedule_requested { background: #3B82F622; color: #3B82F6; }
+    .status-accepted_with_remarks { background: #22C55E22; color: #22C55E; }
+    .chat-messages { height: calc(100vh - 220px); overflow-y: auto; margin-bottom: 12px; }
     .message { margin-bottom: 12px; display: flex; flex-direction: column; }
     .message.user { align-items: flex-end; }
     .message.ai { align-items: flex-start; }
-    .message-bubble {
-      padding: 10px 14px;
-      border-radius: 12px;
-      max-width: 85%;
-      font-size: 14px;
-    }
+    .message-bubble { padding: 10px 14px; border-radius: 12px; max-width: 85%; font-size: 14px; }
     .message.user .message-bubble { background: #6366F1; color: white; }
     .message.ai .message-bubble { background: #1E2938; color: #F1F5F9; }
     .chat-input { display: flex; gap: 8px; }
-    .chat-input input {
-      flex: 1;
-      padding: 10px;
-      background: #1E2938;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      color: #F1F5F9;
-      font-size: 14px;
-    }
-    .chat-input button {
-      padding: 10px 16px;
-      background: #6366F1;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    @media (max-width: 768px) {
-      .layout { grid-template-columns: 1fr; }
-      .panel { border-right: none; border-bottom: 1px solid #334155; }
-    }
+    .chat-input input { flex: 1; padding: 10px; background: #1E2938; border: 1px solid #334155; border-radius: 8px; color: #F1F5F9; font-size: 14px; }
+    .chat-input button { padding: 10px 16px; background: #6366F1; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #1E2938; border: 1px solid #334155; border-radius: 12px; padding: 24px; width: 480px; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { margin-bottom: 16px; color: #F1F5F9; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; color: #94A3B8; font-size: 13px; margin-bottom: 6px; }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; background: #0F172A; border: 1px solid #334155; border-radius: 8px; color: #F1F5F9; font-size: 14px; }
+    .form-group textarea { height: 80px; resize: vertical; }
+    .word-count { font-size: 11px; color: #94A3B8; margin-top: 4px; }
+    .word-count.error { color: #EF4444; }
+    .modal-btns { display: flex; gap: 12px; justify-content: flex-end; }
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; }
+    .btn-primary { background: #6366F1; color: white; }
+    .btn-secondary { background: #334155; color: #F1F5F9; }
+    .error-msg { color: #EF4444; font-size: 13px; margin-bottom: 12px; display: none; }
+    .success-msg { color: #22C55E; font-size: 13px; margin-bottom: 12px; display: none; }
+    @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .panel { border-right: none; border-bottom: 1px solid #334155; } }
   </style>
 </head>
 <body>
-
   <div class="header">
     <h1>MyScheduler</h1>
     <p>Select a date and time to request a meeting</p>
   </div>
-
   <div class="layout">
-    <!-- Panel 1: Calendar -->
     <div class="panel">
       <h2>Select a Date</h2>
       <div class="calendar-header">
@@ -143,23 +82,23 @@
         <button onclick="changeMonth(1)">&#8594;</button>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
-    </div>
-
-    <!-- Panel 2: Available Slots -->
-    <div class="panel">
-      <h2>Available Times for <span id="selectedDateLabel">—</span></h2>
-      <div id="timesContainer">
-        <p style="color:#94A3B8">Select a date to see availability.</p>
+      <div class="past-bookings-section">
+        <h3>View My Past Requests</h3>
+        <div class="past-input">
+          <input type="email" id="pastEmail" placeholder="Enter your email" />
+          <button onclick="loadPastBookings()">Search</button>
+        </div>
+        <div id="pastBookingsContainer"></div>
       </div>
     </div>
-
-    <!-- Panel 3: Chat -->
+    <div class="panel">
+      <h2>Available Times for <span id="selectedDateLabel">—</span></h2>
+      <div id="timesContainer"><p style="color:#94A3B8">Select a date to see availability.</p></div>
+    </div>
     <div class="panel">
       <h2>AI Assistant</h2>
       <div class="chat-messages" id="chatMessages">
-        <div class="message ai">
-          <div class="message-bubble">Hi! I can help you check availability and book a meeting. What date works for you?</div>
-        </div>
+        <div class="message ai"><div class="message-bubble">Hi! I can help you check availability and book a meeting. What date works for you?</div></div>
       </div>
       <div class="chat-input">
         <input type="text" id="chatInput" placeholder="Ask about availability..." onkeydown="if(event.key==='Enter') sendMessage()" />
@@ -168,77 +107,208 @@
     </div>
   </div>
 
+  <!-- Booking Modal -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal">
+      <h3>Request a Meeting</h3>
+      <div class="error-msg" id="bookingError"></div>
+      <div class="success-msg" id="bookingSuccess"></div>
+      <div class="form-group">
+        <label>Your Name *</label>
+        <input type="text" id="visitorName" placeholder="Enter your name" />
+      </div>
+      <div class="form-group">
+        <label>Your Email *</label>
+        <input type="email" id="visitorEmail" placeholder="Enter your email" />
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="text" id="bookingDate" readonly />
+      </div>
+      <div class="form-group">
+        <label>Start Time</label>
+        <input type="text" id="bookingStart" readonly />
+      </div>
+      <div class="form-group">
+        <label>End Time *</label>
+        <input type="time" id="bookingEnd" />
+      </div>
+      <div class="form-group">
+        <label>Reason for Meeting (min 25 words) *</label>
+        <textarea id="bookingDesc" oninput="updateBookingWordCount()" placeholder="Describe why you want to meet..."></textarea>
+        <div class="word-count" id="bookingWordCount">0 / 25 words minimum</div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeBookingModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitBooking()">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
+
     let currentDate = new Date();
     let selectedDate = null;
+    let selectedStartTime = null;
+
+    async function supabaseFetch(path, method = 'GET', body = null) {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+        method,
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': method === 'POST' ? 'return=representation' : ''
+        },
+        body: body ? JSON.stringify(body) : null
+      });
+      const text = await res.text();
+      return text ? JSON.parse(text) : {};
+    }
 
     function renderCalendar() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
       document.getElementById('monthYear').textContent = monthNames[month] + ' ' + year;
-
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
-
-      const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      dayNames.forEach(d => {
+      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
         const el = document.createElement('div');
         el.className = 'day-name';
         el.textContent = d;
         grid.appendChild(el);
       });
-
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const today = new Date();
-
       for (let i = 0; i < firstDay; i++) {
-        const el = document.createElement('div');
-        el.className = 'day empty';
-        grid.appendChild(el);
+        const el = document.createElement('div'); el.className = 'day empty'; grid.appendChild(el);
       }
-
       for (let d = 1; d <= daysInMonth; d++) {
         const el = document.createElement('div');
         el.className = 'day';
         el.textContent = d;
-
         const thisDate = new Date(year, month, d);
-        if (thisDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
-          el.classList.add('past');
-        }
-
-        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) {
-          el.classList.add('today');
-        }
-
+        if (thisDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) el.classList.add('past');
+        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) el.classList.add('today');
+        if (selectedDate && selectedDate.getFullYear() === year && selectedDate.getMonth() === month && selectedDate.getDate() === d) el.classList.add('selected');
         el.onclick = () => selectDate(year, month, d);
         grid.appendChild(el);
       }
     }
 
-    function changeMonth(dir) {
-      currentDate.setMonth(currentDate.getMonth() + dir);
-      renderCalendar();
-    }
+    function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); renderCalendar(); }
 
-    function selectDate(year, month, day) {
+    async function selectDate(year, month, day) {
       selectedDate = new Date(year, month, day);
       document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
       document.getElementById('timesContainer').innerHTML = '<p style="color:#94A3B8">Loading availability...</p>';
       renderCalendar();
+
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
+      renderTimeline(slots, dateStr);
+    }
+
+    function renderTimeline(bookedSlots, dateStr) {
+      const container = document.getElementById('timesContainer');
+      if (!bookedSlots.length) {
+        container.innerHTML = '<p style="color:#94A3B8">No available slots on this date — please try another date.</p>';
+        return;
+      }
+      let html = '';
+      bookedSlots.forEach(slot => {
+        html += `<div class="time-slot booked">🔒 Booked: ${slot.start_time.slice(0,5)} — ${slot.end_time.slice(0,5)}</div>`;
+      });
+      html += `<div class="time-slot available" onclick="openBookingModal('${dateStr}', '${bookedSlots[0].end_time.slice(0,5)}')">✅ Click to request a meeting on this date</div>`;
+      container.innerHTML = html;
+    }
+
+    function openBookingModal(date, startTime) {
+      selectedStartTime = startTime;
+      document.getElementById('bookingDate').value = date;
+      document.getElementById('bookingStart').value = startTime;
+      document.getElementById('bookingEnd').value = '';
+      document.getElementById('visitorName').value = '';
+      document.getElementById('visitorEmail').value = '';
+      document.getElementById('bookingDesc').value = '';
+      document.getElementById('bookingError').style.display = 'none';
+      document.getElementById('bookingSuccess').style.display = 'none';
+      document.getElementById('bookingWordCount').textContent = '0 / 25 words minimum';
+      document.getElementById('bookingModal').classList.add('active');
+    }
+
+    function closeBookingModal() { document.getElementById('bookingModal').classList.remove('active'); }
+
+    function updateBookingWordCount() {
+      const words = document.getElementById('bookingDesc').value.trim().split(/\s+/).filter(w => w).length;
+      const el = document.getElementById('bookingWordCount');
+      el.textContent = words + ' / 25 words minimum';
+      el.className = 'word-count' + (words < 25 ? ' error' : '');
+    }
+
+    async function submitBooking() {
+      const name = document.getElementById('visitorName').value.trim();
+      const email = document.getElementById('visitorEmail').value.trim();
+      const date = document.getElementById('bookingDate').value;
+      const start = document.getElementById('bookingStart').value;
+      const end = document.getElementById('bookingEnd').value;
+      const desc = document.getElementById('bookingDesc').value.trim();
+      const words = desc.split(/\s+/).filter(w => w).length;
+      const errEl = document.getElementById('bookingError');
+      const successEl = document.getElementById('bookingSuccess');
+
+      if (!name || !email || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+      if (!/\S+@\S+\.\S+/.test(email)) { errEl.style.display='block'; errEl.textContent='Please enter a valid email.'; return; }
+      if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
+      if (end <= start) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+
+      const existing = await supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled');
+      const overlap = existing.find(s => !(end <= s.start_time || start >= s.end_time));
+      if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no longer available, please choose another slot.'; return; }
+
+      errEl.style.display = 'none';
+      await supabaseFetch('booking_requests', 'POST', {
+        visitor_name: name,
+        visitor_email: email,
+        requested_date: date,
+        start_time: start,
+        end_time: end,
+        description: desc,
+        status: 'pending'
+      });
+
+      successEl.style.display = 'block';
+      successEl.textContent = 'Your request has been submitted. You will receive an email once the owner reviews it.';
+      setTimeout(() => closeBookingModal(), 3000);
+    }
+
+    async function loadPastBookings() {
+      const email = document.getElementById('pastEmail').value.trim();
+      const container = document.getElementById('pastBookingsContainer');
+      if (!email) { container.innerHTML = '<p style="color:#EF4444;font-size:13px">Please enter your email.</p>'; return; }
+      container.innerHTML = '<p style="color:#94A3B8;font-size:13px">Loading...</p>';
+      const data = await supabaseFetch('booking_requests?visitor_email=eq.' + encodeURIComponent(email) + '&order=created_at.desc');
+      if (!data.length) { container.innerHTML = '<p style="color:#94A3B8;font-size:13px">No booking requests found for this email.</p>'; return; }
+      container.innerHTML = data.map(b => `
+        <div class="booking-card">
+          <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
+          <div style="font-size:13px;margin-bottom:4px">${b.requested_date} | ${b.start_time.slice(0,5)} — ${b.end_time.slice(0,5)}</div>
+          ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8">Remarks: ${b.owner_remarks}</div>` : ''}
+        </div>
+      `).join('');
     }
 
     function sendMessage() {
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
       if (!msg) return;
-
       const container = document.getElementById('chatMessages');
       container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
       input.value = '';
-
       setTimeout(() => {
         container.innerHTML += `<div class="message ai"><div class="message-bubble">Let me check the availability for you... (AI coming soon!)</div></div>`;
         container.scrollTop = container.scrollHeight;
