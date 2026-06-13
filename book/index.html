@@ -147,6 +147,7 @@
   </div>
 
   <script>
+    emailjs.init('YOUR_PUBLIC_KEY'):
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
 
@@ -291,7 +292,14 @@
         description: desc,
         status: 'pending'
       });
-
+emailjs.send('service_88v685e', 'template_u0x07ob', {
+  visitor_name: name,
+  visitor_email: email,
+  requested_date: date,
+  start_time: start,
+  end_time: end,
+  description: desc
+});
       successEl.style.display = 'block';
       successEl.textContent = 'Your request has been submitted. You will receive an email once the owner reviews it.';
       setTimeout(() => closeBookingModal(), 3000);
