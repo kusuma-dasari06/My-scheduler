@@ -314,16 +314,49 @@ loadSlots(`${y}-${m}-${d}`);
     }
 
     function sendMessage() {
-      const input = document.getElementById('chatInput');
-      const msg = input.value.trim();
-      if (!msg) return;
-      const container = document.getElementById('chatMessages');
-      container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
-      input.value = '';
-      setTimeout(() => {
-        container.innerHTML += `<div class="message ai"><div class="message-bubble">AI integration coming soon!</div></div>`;
-        container.scrollTop = container.scrollHeight;
-      }, 800);
+      async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const container = document.getElementById('chatMessages');
+  container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
+  input.value = '';
+  container.scrollTop = container.scrollHeight;
+
+  // Fetch today's schedule
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth()+1).padStart(2,'0');
+  const d = String(today.getDate()).padStart(2,'0');
+  const todayStr = `${y}-${m}-${d}`;
+  const slots = await supabaseFetch('schedules?date=eq.' + todayStr + '&order=start_time');
+  const pending = await supabaseFetch('booking_requests?status=eq.pending');
+
+  const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST.
+Working hours: 5AM to 11PM IST.
+Today's schedule: ${JSON.stringify(slots)}
+Pending booking requests: ${JSON.stringify(pending)}
+Help the owner manage their schedule. For any write actions (book/cancel/reschedule), always confirm before acting.
+Use action tags like <ACTION:CANCEL:id> or <ACTION:BOOK:title:date:start:end> when owner confirms.`;
+
+  try {
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemPrompt,
+        messages: [{ role: 'user', parts: [{ text: msg }] }]
+      })
+    });
+    const data = await res.json();
+    const reply = data.reply || 'Sorry, I could not process that.';
+    container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
+    container.scrollTop = container.scrollHeight;
+  } catch(e) {
+    container.innerHTML += `<div class="message ai"><div class="message-bubble">Error connecting to AI. Please try again.</div></div>`;
+    container.scrollTop = container.scrollHeight;
+  }
+}}, 800);
     }
 // EmailJS
 const EMAILJS_SERVICE = 'service_88v685e';
