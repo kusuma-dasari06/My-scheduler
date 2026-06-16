@@ -112,6 +112,7 @@
       </div>
     </div>
   </div>
+
   <div class="modal-overlay" id="addSlotModal">
     <div class="modal">
       <h3>Add to Schedule</h3>
@@ -153,14 +154,48 @@
       </div>
     </div>
   </div>
+
+  <div class="modal-overlay" id="requestsDrawer">
+    <div class="modal" style="width:560px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>Booking Requests</h3>
+        <button class="btn btn-secondary" onclick="closeRequestsDrawer()">Close</button>
+      </div>
+      <div id="requestsContainer"><p style="color:#94A3B8">Loading...</p></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="remarksModal">
+    <div class="modal" style="width:400px">
+      <h3 id="remarksTitle">Add Remarks</h3>
+      <div class="form-group">
+        <label>Your Message</label>
+        <textarea id="remarksText" style="height:100px"></textarea>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeRemarksModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitRemarks()">Send</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
+    const EMAILJS_SERVICE = 'service_88v685e';
+    const EMAILJS_PUBLIC = 'o0EwTVp7WtONi-e8k';
 
     if (!sessionStorage.getItem('auth')) window.location.href = '/';
 
     let currentDate = new Date();
     let selectedDate = null;
+    let currentRemarkAction = null;
+    let currentRemarkRequestId = null;
+    let currentRemarkEmail = null;
+    let currentRemarkDate = null;
+    let currentRemarkStart = null;
+    let currentRemarkEnd = null;
+    let currentRemarkName = null;
 
     async function supabaseFetch(path, method = 'GET', body = null) {
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
@@ -217,13 +252,23 @@
     async function updateStatus(id, status) {
       if (!confirm('Are you sure?')) return;
       await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status });
-      if (selectedDate) loadSlots(selectedDate.toISOString().split('T')[0]);
+      if (selectedDate) {
+        const y = selectedDate.getFullYear();
+        const m = String(selectedDate.getMonth()+1).padStart(2,'0');
+        const d = String(selectedDate.getDate()).padStart(2,'0');
+        loadSlots(`${y}-${m}-${d}`);
+      }
     }
 
     async function cancelSlot(id) {
       if (!confirm('Cancel this slot?')) return;
       await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status: 'cancelled' });
-      if (selectedDate) loadSlots(selectedDate.toISOString().split('T')[0]);
+      if (selectedDate) {
+        const y = selectedDate.getFullYear();
+        const m = String(selectedDate.getMonth()+1).padStart(2,'0');
+        const d = String(selectedDate.getDate()).padStart(2,'0');
+        loadSlots(`${y}-${m}-${d}`);
+      }
     }
 
     function editSlot(id) { alert('Edit coming soon!'); }
@@ -266,9 +311,9 @@
       document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
       document.getElementById('slotDate').value = selectedDate.toISOString().split('T')[0];
       const y = selectedDate.getFullYear();
-const m = String(selectedDate.getMonth()+1).padStart(2,'0');
-const d = String(selectedDate.getDate()).padStart(2,'0');
-loadSlots(`${y}-${m}-${d}`);
+      const m = String(selectedDate.getMonth()+1).padStart(2,'0');
+      const d = String(selectedDate.getDate()).padStart(2,'0');
+      loadSlots(`${y}-${m}-${d}`);
       renderCalendar();
     }
 
@@ -310,217 +355,163 @@ loadSlots(`${y}-${m}-${d}`);
       errEl.style.display = 'none';
       await supabaseFetch('schedules', 'POST', { title, date, start_time: start, end_time: end, description: desc, category, status: 'upcoming', created_by: 'owner' });
       closeAddSlot();
-      if (selectedDate) loadSlots(selectedDate.toISOString().split('T')[0]);
+      if (selectedDate) {
+        const y = selectedDate.getFullYear();
+        const m = String(selectedDate.getMonth()+1).padStart(2,'0');
+        const d = String(selectedDate.getDate()).padStart(2,'0');
+        loadSlots(`${y}-${m}-${d}`);
+      }
     }
 
-    function sendMessage() {
-      async function sendMessage() {
-  const input = document.getElementById('chatInput');
-  const msg = input.value.trim();
-  if (!msg) return;
-  const container = document.getElementById('chatMessages');
-  container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
-  input.value = '';
-  container.scrollTop = container.scrollHeight;
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      const container = document.getElementById('chatMessages');
+      container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
 
-  // Fetch today's schedule
-  const today = new Date();
-  const y = today.getFullYear();
-  const m = String(today.getMonth()+1).padStart(2,'0');
-  const d = String(today.getDate()).padStart(2,'0');
-  const todayStr = `${y}-${m}-${d}`;
-  const slots = await supabaseFetch('schedules?date=eq.' + todayStr + '&order=start_time');
-  const pending = await supabaseFetch('booking_requests?status=eq.pending');
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = String(today.getMonth()+1).padStart(2,'0');
+      const d = String(today.getDate()).padStart(2,'0');
+      const todayStr = `${y}-${m}-${d}`;
+      const slots = await supabaseFetch('schedules?date=eq.' + todayStr + '&order=start_time');
+      const pending = await supabaseFetch('booking_requests?status=eq.pending');
 
-  const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST.
-Working hours: 5AM to 11PM IST.
-Today's schedule: ${JSON.stringify(slots)}
-Pending booking requests: ${JSON.stringify(pending)}
-Help the owner manage their schedule. For any write actions (book/cancel/reschedule), always confirm before acting.
-Use action tags like <ACTION:CANCEL:id> or <ACTION:BOOK:title:date:start:end> when owner confirms.`;
+      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. Today's schedule: ${JSON.stringify(slots)}. Pending booking requests: ${JSON.stringify(pending)}. Help the owner manage their schedule. Always confirm before any write action.`;
 
-  try {
-    const res = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemPrompt,
-        messages: [{ role: 'user', parts: [{ text: msg }] }]
-      })
-    });
-    const data = await res.json();
-    const reply = data.reply || 'Sorry, I could not process that.';
-    container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
-    container.scrollTop = container.scrollHeight;
-  } catch(e) {
-    container.innerHTML += `<div class="message ai"><div class="message-bubble">Error connecting to AI. Please try again.</div></div>`;
-    container.scrollTop = container.scrollHeight;
-  }
-}}, 800);
+      try {
+        const res = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemPrompt,
+            messages: [{ role: 'user', parts: [{ text: msg }] }]
+          })
+        });
+        const data = await res.json();
+        const reply = data.reply || 'Sorry, I could not process that.';
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
+        container.scrollTop = container.scrollHeight;
+      } catch(e) {
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">Error connecting to AI. Please try again.</div></div>`;
+        container.scrollTop = container.scrollHeight;
+      }
     }
-// EmailJS
-const EMAILJS_SERVICE = 'service_88v685e';
-const EMAILJS_PUBLIC = 'o0EwTVp7WtONi-e8k';
 
-let currentRemarkAction = null;
-let currentRemarkRequestId = null;
-let currentRemarkEmail = null;
+    async function loadPendingCount() {
+      const data = await supabaseFetch('booking_requests?status=eq.pending&select=id');
+      document.getElementById('badge').textContent = data.length || 0;
+    }
 
-async function loadPendingCount() {
-  const data = await supabaseFetch('booking_requests?status=eq.pending&select=id');
-  document.getElementById('badge').textContent = data.length || 0;
-}
+    function openRequestsDrawer() {
+      document.getElementById('requestsDrawer').classList.add('active');
+      loadRequests();
+    }
 
-function openRequestsDrawer() {
-  document.getElementById('requestsDrawer').classList.add('active');
-  loadRequests();
-}
+    function closeRequestsDrawer() {
+      document.getElementById('requestsDrawer').classList.remove('active');
+    }
 
-function closeRequestsDrawer() {
-  document.getElementById('requestsDrawer').classList.remove('active');
-}
+    async function loadRequests() {
+      const container = document.getElementById('requestsContainer');
+      container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
+      const data = await supabaseFetch('booking_requests?order=created_at.desc');
+      if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No requests yet.</p>'; return; }
+      container.innerHTML = data.map(r => `
+        <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-weight:bold">${r.visitor_name}</span>
+            <span style="color:#94A3B8;font-size:11px">${r.status.replace(/_/g,' ')}</span>
+          </div>
+          <div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${r.visitor_email}</div>
+          <div style="font-size:13px;margin-bottom:4px">${r.requested_date} | ${r.start_time.slice(0,5)} — ${r.end_time.slice(0,5)}</div>
+          <div style="font-size:13px;margin-bottom:12px;color:#CBD5E1">${r.description}</div>
+          ${r.status === 'pending' ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="acceptRequest('${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#22C55E;color:white" onclick="openRemarks('accept_remarks','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept with Remarks</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}')">Request Reschedule</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}')">Decline</button>
+          </div>` : `<div style="font-size:12px;color:#94A3B8">Remarks: ${r.owner_remarks || '—'}</div>`}
+        </div>
+      `).join('');
+    }
 
-async function loadRequests() {
-  const container = document.getElementById('requestsContainer');
-  container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
-  const data = await supabaseFetch('booking_requests?order=created_at.desc');
-  
-  if (!data.length) {
-    container.innerHTML = '<p style="color:#94A3B8">No requests yet.</p>';
-    return;
-  }
+    async function acceptRequest(id, email, date, start, end, name) {
+      if (!confirm('Accept this request?')) return;
+      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'accepted' });
+      await supabaseFetch('schedules', 'POST', {
+        title: 'Meeting with ' + name, date, start_time: start, end_time: end,
+        description: 'Visitor booking', category: 'Meeting', status: 'upcoming', created_by: 'visitor'
+      });
+      emailjs.init(EMAILJS_PUBLIC);
+      emailjs.send(EMAILJS_SERVICE, 'template_u0x07ob', {
+        visitor_name: name, visitor_email: email, requested_date: date,
+        start_time: start, end_time: end, description: 'Your meeting request has been accepted!'
+      });
+      loadRequests();
+      loadPendingCount();
+    }
 
-  container.innerHTML = data.map(r => {
-    const isConflict = false;
-    return `
-    <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <span style="font-weight:bold">${r.visitor_name}</span>
-        <span style="background:#33415522;color:#94A3B8;padding:2px 8px;border-radius:12px;font-size:11px">${r.status.replace(/_/g,' ')}</span>
-      </div>
-      <div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${r.visitor_email}</div>
-      <div style="font-size:13px;margin-bottom:4px">${r.requested_date} | ${r.start_time.slice(0,5)} — ${r.end_time.slice(0,5)}</div>
-      <div style="font-size:13px;margin-bottom:12px;color:#CBD5E1">${r.description}</div>
-      ${r.status === 'pending' ? `
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="acceptRequest('${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept</button>
-        <button class="btn" style="font-size:12px;padding:6px 12px;background:#22C55E;color:white" onclick="openRemarks('accept_remarks','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept with Remarks</button>
-        <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}')">Request Reschedule</button>
-        <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}')">Decline</button>
-      </div>` : `<div style="font-size:12px;color:#94A3B8">Owner remarks: ${r.owner_remarks || '—'}</div>`}
-    </div>`;
-  }).join('');
-}
+    function openRemarks(action, id, email, date, start, end, name) {
+      currentRemarkAction = action;
+      currentRemarkRequestId = id;
+      currentRemarkEmail = email;
+      currentRemarkDate = date;
+      currentRemarkStart = start;
+      currentRemarkEnd = end;
+      currentRemarkName = name;
+      const titles = { 'accept_remarks': 'Accept with Remarks', 'reschedule': 'Request Reschedule', 'decline': 'Decline Request' };
+      document.getElementById('remarksTitle').textContent = titles[action];
+      document.getElementById('remarksText').value = '';
+      document.getElementById('remarksModal').classList.add('active');
+    }
 
-async function acceptRequest(id, email, date, start, end, name) {
-  if (!confirm('Accept this request?')) return;
-  await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'accepted' });
-  await supabaseFetch('schedules', 'POST', {
-    title: 'Meeting with ' + name,
-    date, start_time: start, end_time: end,
-    description: 'Visitor booking', category: 'Meeting',
-    status: 'upcoming', created_by: 'visitor'
-  });
-  emailjs.init(EMAILJS_PUBLIC);
-  emailjs.send(EMAILJS_SERVICE, 'template_u0x07ob', {
-    visitor_name: name, visitor_email: email,
-    requested_date: date, start_time: start, end_time: end,
-    description: 'Your meeting request has been accepted!'
-  });
-  loadRequests();
-  loadPendingCount();
-}
+    function closeRemarksModal() { document.getElementById('remarksModal').classList.remove('active'); }
 
-function openRemarks(action, id, email, date, start, end, name) {
-  currentRemarkAction = action;
-  currentRemarkRequestId = id;
-  currentRemarkEmail = email;
-  currentRemarkDate = date;
-  currentRemarkStart = start;
-  currentRemarkEnd = end;
-  currentRemarkName = name;
-  
-  const titles = {
-    'accept_remarks': 'Accept with Remarks',
-    'reschedule': 'Request Reschedule',
-    'decline': 'Decline Request'
-  };
-  document.getElementById('remarksTitle').textContent = titles[action];
-  document.getElementById('remarksText').value = '';
-  document.getElementById('remarksModal').classList.add('active');
-}
+    async function submitRemarks() {
+      const remarks = document.getElementById('remarksText').value.trim();
+      emailjs.init(EMAILJS_PUBLIC);
+      if (currentRemarkAction === 'accept_remarks') {
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'accepted_with_remarks', owner_remarks: remarks });
+        await supabaseFetch('schedules', 'POST', {
+          title: 'Meeting with ' + currentRemarkName, date: currentRemarkDate,
+          start_time: currentRemarkStart, end_time: currentRemarkEnd,
+          description: 'Visitor booking', category: 'Meeting', status: 'upcoming', created_by: 'visitor'
+        });
+        emailjs.send(EMAILJS_SERVICE, 'template_u0x07ob', {
+          visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
+          requested_date: currentRemarkDate, start_time: currentRemarkStart,
+          end_time: currentRemarkEnd, description: 'Accepted! Remarks: ' + remarks
+        });
+      } else if (currentRemarkAction === 'reschedule') {
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'reschedule_requested', owner_remarks: remarks });
+        emailjs.send(EMAILJS_SERVICE, 'template_u0x07ob', {
+          visitor_name: 'Visitor', visitor_email: currentRemarkEmail,
+          requested_date: '', start_time: '', end_time: '',
+          description: 'Reschedule requested: ' + remarks
+        });
+      } else if (currentRemarkAction === 'decline') {
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'declined', owner_remarks: remarks });
+        emailjs.send(EMAILJS_SERVICE, 'template_u0x07ob', {
+          visitor_name: 'Visitor', visitor_email: currentRemarkEmail,
+          requested_date: '', start_time: '', end_time: '',
+          description: 'Request declined. Reason: ' + remarks
+        });
+      }
+      closeRemarksModal();
+      loadRequests();
+      loadPendingCount();
+    }
 
-function closeRemarksModal() {
-  document.getElementById('remarksModal').classList.remove('active');
-}
-
-async function submitRemarks() {
-  const remarks = document.getElementById('remarksText').value.trim();
-  emailjs.init(EMAILJS_PUBLIC);
-
-  if (currentRemarkAction === 'accept_remarks') {
-    await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'accepted_with_remarks', owner_remarks: remarks });
-    await supabaseFetch('schedules', 'POST', {
-      title: 'Meeting with ' + currentRemarkName,
-      date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
-      description: 'Visitor booking', category: 'Meeting',
-      status: 'upcoming', created_by: 'visitor'
-    });
-    emailjs.send(EMAILJS_SERVICE, 'template_u0x07ob', {
-      visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
-      requested_date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
-      description: 'Accepted! Owner remarks: ' + remarks
-    });
-  } else if (currentRemarkAction === 'reschedule') {
-    await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'reschedule_requested', owner_remarks: remarks });
-    emailjs.send(EMAILJS_SERVICE, 'template_u0x07ob', {
-      visitor_name: 'Visitor', visitor_email: currentRemarkEmail,
-      requested_date: '', start_time: '', end_time: '',
-      description: 'Reschedule requested. Owner message: ' + remarks
-    });
-  } else if (currentRemarkAction === 'decline') {
-    await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'declined', owner_remarks: remarks });
-    emailjs.send(EMAILJS_SERVICE, 'template_u0x07ob', {
-      visitor_name: 'Visitor', visitor_email: currentRemarkEmail,
-      requested_date: '', start_time: '', end_time: '',
-      description: 'Your request was declined. Reason: ' + remarks
-    });
-  }
-
-  closeRemarksModal();
-  loadRequests();
-  loadPendingCount();
-}
     renderCalendar();
     loadStatusCounts();
     loadPendingCount();
     const today = new Date();
     selectDate(today.getFullYear(), today.getMonth(), today.getDate());
   </script>
-  <!-- Requests Drawer -->
-<div class="modal-overlay" id="requestsDrawer">
-  <div class="modal" style="width:560px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3>Booking Requests</h3>
-      <button class="btn btn-secondary" onclick="closeRequestsDrawer()">Close</button>
-    </div>
-    <div id="requestsContainer"><p style="color:#94A3B8">Loading...</p></div>
-  </div>
-</div>
-
-<!-- Remarks Modal -->
-<div class="modal-overlay" id="remarksModal">
-  <div class="modal" style="width:400px">
-    <h3 id="remarksTitle">Add Remarks</h3>
-    <div class="form-group">
-      <label>Your Message</label>
-      <textarea id="remarksText" style="height:100px"></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-secondary" onclick="closeRemarksModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitRemarks()">Send</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
