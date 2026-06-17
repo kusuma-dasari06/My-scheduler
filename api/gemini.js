@@ -22,6 +22,6 @@ module.exports = async function handler(req, res) {
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not process that.';
     res.status(200).json({ reply: text });
   } catch (err) {
-    res.status(500).json({ error: 'Gemini API error' });
+    res.status(500).json({ error: err.message });
   }
 };
