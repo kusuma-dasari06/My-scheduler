@@ -153,7 +153,7 @@
     let currentDate = new Date();
     let selectedDate = null;
     let selectedStartTime = null;
-
+let chatHistory = [];
     async function supabaseFetch(path, method = 'GET', body = null) {
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
         method,
@@ -315,12 +315,44 @@
       `).join('');
     }
 
+    async function executeChatBooking(details) {
+      try {
+        const existing = await supabaseFetch('schedules?date=eq.' + details.date + '&status=neq.cancelled');
+        const overlap = existing.find(s => !(details.end <= s.start_time || details.start >= s.end_time));
+        if (overlap) return '❌ Sorry, that time is no longer available. Please choose another slot.';
+
+        await supabaseFetch('booking_requests', 'POST', {
+          visitor_name: details.name,
+          visitor_email: details.email,
+          requested_date: details.date,
+          start_time: details.start,
+          end_time: details.end,
+          description: details.desc,
+          status: 'pending'
+        });
+
+        emailjs.send('service_88v685e', 'template_u0x07ob', {
+          visitor_name: details.name,
+          visitor_email: details.email,
+          requested_date: details.date,
+          start_time: details.start,
+          end_time: details.end,
+          description: details.desc
+        });
+
+        return '✅ Your booking request has been submitted! You will receive an email once the owner reviews it.';
+      } catch(e) {
+        return '❌ Something went wrong. Please try again.';
+      }
+    }
+
     async function sendMessage() {
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
       if (!msg) return;
       const container = document.getElementById('chatMessages');
       container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
+      chatHistory.push({ role: 'user', parts: [{ text: msg }] });
       input.value = '';
       container.scrollTop = container.scrollHeight;
 
@@ -337,11 +369,10 @@
 RULES:
 - NEVER reveal meeting titles, descriptions, or visitor names
 - Only tell available or booked status
-- If visitor wants to book, collect: name, email, date, start time, end time, reason (min 25 words) step by step
-- Once all details collected, reply EXACTLY in this format:
-[BOOK] name=John | email=john@gmail.com | date=2026-06-18 | start=14:00 | end=15:00 | desc=reason here
-
-Do not book until all 5 details are confirmed by visitor.`;
+- If visitor wants to book, collect details one by one in this order: 1) name, 2) email, 3) date, 4) start time, 5) end time, 6) reason (minimum 25 words)
+- After collecting all details, confirm with visitor once
+- Then reply EXACTLY like this on a single line:
+[BOOK] name=VALUE | email=VALUE | date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
 
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
@@ -353,16 +384,36 @@ Do not book until all 5 details are confirmed by visitor.`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             systemPrompt,
-            messages: [{ role: 'user', parts: [{ text: msg }] }]
+            messages: chatHistory
           })
         });
         const data = await res.json();
         document.getElementById(loadingId).remove();
         const reply = data.reply || 'Sorry, I could not process that.';
-        container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
+        chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+        if (reply.includes('[BOOK]')) {
+          const bookLine = reply.split('\n').find(l => l.includes('[BOOK]'));
+          const parse = (key) => {
+            const match = bookLine.match(new RegExp(key + '=([^|]+)'));
+            return match ? match[1].trim() : '';
+          };
+          const details = {
+            name: parse('name'),
+            email: parse('email'),
+            date: parse('date'),
+            start: parse('start'),
+            end: parse('end'),
+            desc: parse('desc')
+          };
+          const result = await executeChatBooking(details);
+          container.innerHTML += `<div class="message ai"><div class="message-bubble">${result}</div></div>`;
+        } else {
+          container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
+        }
+
         container.scrollTop = container.scrollHeight;
       } catch(e) {
-        document.getElementById(loadingId).remove();
+        document.getElementById(loadingId) && document.getElementById(loadingId).remove();
         container.innerHTML += `<div class="message ai"><div class="message-bubble">Error connecting to AI.</div></div>`;
         container.scrollTop = container.scrollHeight;
       }
