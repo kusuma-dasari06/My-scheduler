@@ -332,7 +332,16 @@
       const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
       const bookedTimes = slots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
 
-      const systemPrompt = `You are MyScheduler AI assistant for visitors. Today is ${dateStr} IST. Working hours: 5AM to 11PM IST. Booked times on selected date: ${JSON.stringify(bookedTimes)}. NEVER reveal meeting titles, descriptions, visitor names, or any private details. Only show available vs booked. Help visitors check availability and book meetings only.`;
+      const systemPrompt = `You are MyScheduler AI assistant for visitors. Today is ${dateStr} IST. Working hours: 5AM to 11PM IST. Booked times on selected date: ${JSON.stringify(bookedTimes)}.
+
+RULES:
+- NEVER reveal meeting titles, descriptions, or visitor names
+- Only tell available or booked status
+- If visitor wants to book, collect: name, email, date, start time, end time, reason (min 25 words) step by step
+- Once all details collected, reply EXACTLY in this format:
+[BOOK] name=John | email=john@gmail.com | date=2026-06-18 | start=14:00 | end=15:00 | desc=reason here
+
+Do not book until all 5 details are confirmed by visitor.`;
 
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
