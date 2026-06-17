@@ -108,7 +108,6 @@
     </div>
   </div>
 
-  <!-- Booking Modal -->
   <div class="modal-overlay" id="bookingModal">
     <div class="modal">
       <h3>Request a Meeting</h3>
@@ -209,49 +208,44 @@
       document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
       document.getElementById('timesContainer').innerHTML = '<p style="color:#94A3B8">Loading availability...</p>';
       renderCalendar();
-
       const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
       renderTimeline(slots, dateStr);
     }
 
     function renderTimeline(bookedSlots, dateStr) {
-  const container = document.getElementById('timesContainer');
-  container.innerHTML = '';
-  let html = '';
-  let hasAvailable = false;
-
-  for (let h = 5; h < 23; h++) {
-    const startStr = String(h).padStart(2,'0') + ':00:00';
-    const endStr = String(h+1).padStart(2,'0') + ':00:00';
-
-    const isBooked = bookedSlots.some(s =>
-      s.start_time < endStr && s.end_time > startStr
-    );
-
-    if (isBooked) {
-      html += `<div class="time-slot booked">🔒 Booked: ${startStr.slice(0,5)} — ${endStr.slice(0,5)}</div>`;
-    } else {
-      hasAvailable = true;
-      html += `<div class="time-slot available" onclick="openBookingModal('${dateStr}', '${startStr}', '${endStr}')">✅ ${startStr.slice(0,5)} — ${endStr.slice(0,5)} Available</div>`;
+      const container = document.getElementById('timesContainer');
+      container.innerHTML = '';
+      let html = '';
+      let hasAvailable = false;
+      for (let h = 5; h < 23; h++) {
+        const startStr = String(h).padStart(2,'0') + ':00:00';
+        const endStr = String(h+1).padStart(2,'0') + ':00:00';
+        const isBooked = bookedSlots.some(s => s.start_time < endStr && s.end_time > startStr);
+        if (isBooked) {
+          html += `<div class="time-slot booked">🔒 Booked: ${startStr.slice(0,5)} — ${endStr.slice(0,5)}</div>`;
+        } else {
+          hasAvailable = true;
+          html += `<div class="time-slot available" onclick="openBookingModal('${dateStr}', '${startStr}', '${endStr}')">✅ ${startStr.slice(0,5)} — ${endStr.slice(0,5)} Available</div>`;
+        }
+      }
+      if (!hasAvailable) html = '<p style="color:#94A3B8">No available slots on this date.</p>';
+      container.innerHTML = html;
     }
-  }
-
-  if (!hasAvailable) {
-    html = '<p style="color:#94A3B8">No available slots on this date.</p>';
-  }
-  container.innerHTML = html;
-}
 
     function openBookingModal(date, startTime, endTime) {
-  selectedStartTime = startTime;
-  document.getElementById('bookingDate').value = date;
-  document.getElementById('bookingStart').value = startTime.slice(0,5);
-  document.getElementById('bookingEnd').value = endTime.slice(0,5);
-  document.getElementById('visitorName').value = '';
-  document.getElementById('visitorEmail').value = '';
-  document.getElementById('bookingModal').classList.add('active');
-}
+      selectedStartTime = startTime;
+      document.getElementById('bookingDate').value = date;
+      document.getElementById('bookingStart').value = startTime.slice(0,5);
+      document.getElementById('bookingEnd').value = endTime.slice(0,5);
+      document.getElementById('visitorName').value = '';
+      document.getElementById('visitorEmail').value = '';
+      document.getElementById('bookingDesc').value = '';
+      document.getElementById('bookingWordCount').textContent = '0 / 25 words minimum';
+      document.getElementById('bookingError').style.display = 'none';
+      document.getElementById('bookingSuccess').style.display = 'none';
+      document.getElementById('bookingModal').classList.add('active');
+    }
 
     function closeBookingModal() { document.getElementById('bookingModal').classList.remove('active'); }
 
@@ -292,14 +286,14 @@
         description: desc,
         status: 'pending'
       });
-emailjs.send('service_88v685e', 'template_u0x07ob', {
-  visitor_name: name,
-  visitor_email: email,
-  requested_date: date,
-  start_time: start,
-  end_time: end,
-  description: desc
-});
+      emailjs.send('service_88v685e', 'template_u0x07ob', {
+        visitor_name: name,
+        visitor_email: email,
+        requested_date: date,
+        start_time: start,
+        end_time: end,
+        description: desc
+      });
       successEl.style.display = 'block';
       successEl.textContent = 'Your request has been submitted. You will receive an email once the owner reviews it.';
       setTimeout(() => closeBookingModal(), 3000);
@@ -321,17 +315,48 @@ emailjs.send('service_88v685e', 'template_u0x07ob', {
       `).join('');
     }
 
-    function sendMessage() {
+    async function sendMessage() {
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
       if (!msg) return;
       const container = document.getElementById('chatMessages');
       container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
       input.value = '';
-      setTimeout(() => {
-        container.innerHTML += `<div class="message ai"><div class="message-bubble">Let me check the availability for you... (AI coming soon!)</div></div>`;
+      container.scrollTop = container.scrollHeight;
+
+      const today = new Date();
+      const dateStr = selectedDate ?
+        `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}`
+        : `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+      const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
+      const bookedTimes = slots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
+
+      const systemPrompt = `You are MyScheduler AI assistant for visitors. Today is ${dateStr} IST. Working hours: 5AM to 11PM IST. Booked times on selected date: ${JSON.stringify(bookedTimes)}. NEVER reveal meeting titles, descriptions, visitor names, or any private details. Only show available vs booked. Help visitors check availability and book meetings only.`;
+
+      const loadingId = 'loading-' + Date.now();
+      container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const res = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemPrompt,
+            messages: [{ role: 'user', parts: [{ text: msg }] }]
+          })
+        });
+        const data = await res.json();
+        document.getElementById(loadingId).remove();
+        const reply = data.reply || 'Sorry, I could not process that.';
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
         container.scrollTop = container.scrollHeight;
-      }, 800);
+      } catch(e) {
+        document.getElementById(loadingId).remove();
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">Error connecting to AI.</div></div>`;
+        container.scrollTop = container.scrollHeight;
+      }
     }
 
     renderCalendar();
