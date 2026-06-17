@@ -3,15 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-  <title>MyScheduler - Book a Meeting</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <title>MyScheduler - Owner</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0F172A; font-family: Arial, sans-serif; color: #F1F5F9; }
-    .header { background: #1E2938; border-bottom: 1px solid #334155; padding: 16px 24px; }
+    .header { background: #1E2938; border-bottom: 1px solid #334155; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
     .header h1 { color: #6366F1; font-size: 20px; }
-    .header p { color: #94A3B8; font-size: 14px; margin-top: 4px; }
-    .layout { display: grid; grid-template-columns: 320px 1fr 320px; height: calc(100vh - 70px); }
+    .header-btns { display: flex; gap: 12px; align-items: center; }
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; }
+    .btn-primary { background: #6366F1; color: white; }
+    .btn-secondary { background: #334155; color: #F1F5F9; }
+    .badge { background: #EF4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; margin-left: 4px; }
+    .layout { display: grid; grid-template-columns: 320px 1fr 320px; height: calc(100vh - 60px); }
     .panel { border-right: 1px solid #334155; padding: 16px; overflow-y: auto; }
     .panel:last-child { border-right: none; }
     .panel h2 { font-size: 16px; color: #94A3B8; margin-bottom: 16px; }
@@ -23,23 +27,27 @@
     .day:hover { background: #334155; }
     .day.today { background: #6366F1; color: white; }
     .day.selected { background: #4F46E5; color: white; }
-    .day.past { color: #475569; cursor: default; pointer-events: none; }
-    .time-slot { padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
-    .time-slot.booked { background: #1E2938; border: 1px solid #334155; color: #475569; }
-    .time-slot.available { background: #1E2938; border: 1px dashed #6366F1; color: #94A3B8; cursor: pointer; }
-    .time-slot.available:hover { border-color: #6366F1; color: #F1F5F9; background: #1E3A5F; }
-    .past-bookings-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #334155; }
-    .past-bookings-section h3 { font-size: 14px; color: #94A3B8; margin-bottom: 12px; }
-    .past-input { display: flex; gap: 8px; margin-bottom: 12px; }
-    .past-input input { flex: 1; padding: 8px; background: #0F172A; border: 1px solid #334155; border-radius: 8px; color: #F1F5F9; font-size: 13px; }
-    .past-input button { padding: 8px 14px; background: #334155; color: #F1F5F9; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
-    .booking-card { background: #1E2938; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-    .booking-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-bottom: 6px; }
-    .status-pending { background: #F59E0B22; color: #F59E0B; }
-    .status-accepted { background: #22C55E22; color: #22C55E; }
-    .status-declined { background: #EF444422; color: #EF4444; }
-    .status-reschedule_requested { background: #3B82F622; color: #3B82F6; }
-    .status-accepted_with_remarks { background: #22C55E22; color: #22C55E; }
+    .day.empty { cursor: default; }
+    .slot-card { background: #1E2938; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 4px solid #6366F1; }
+    .slot-card.completed { border-left-color: #22C55E; opacity: 0.7; }
+    .slot-card.cancelled { border-left-color: #EF4444; opacity: 0.7; }
+    .slot-card.rescheduled { border-left-color: #F59E0B; }
+    .slot-title { font-weight: bold; margin-bottom: 4px; }
+    .slot-time { color: #94A3B8; font-size: 13px; margin-bottom: 4px; }
+    .slot-category { display: inline-block; background: #334155; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-bottom: 8px; }
+    .slot-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .slot-actions button { padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; }
+    .btn-complete { background: #22C55E; color: white; }
+    .btn-edit { background: #3B82F6; color: white; }
+    .btn-reschedule { background: #F59E0B; color: white; }
+    .btn-cancel { background: #EF4444; color: white; }
+    .status-counts { display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #334155; }
+    .count-item { text-align: center; flex: 1; }
+    .count-num { font-size: 24px; font-weight: bold; }
+    .count-label { font-size: 11px; color: #94A3B8; }
+    .count-item.completed .count-num { color: #22C55E; }
+    .count-item.rescheduled .count-num { color: #F59E0B; }
+    .count-item.cancelled .count-num { color: #EF4444; }
     .chat-messages { height: calc(100vh - 220px); overflow-y: auto; margin-bottom: 12px; }
     .message { margin-bottom: 12px; display: flex; flex-direction: column; }
     .message.user { align-items: flex-end; }
@@ -56,104 +64,141 @@
     .modal h3 { margin-bottom: 16px; color: #F1F5F9; }
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; color: #94A3B8; font-size: 13px; margin-bottom: 6px; }
-    .form-group input, .form-group textarea { width: 100%; padding: 10px; background: #0F172A; border: 1px solid #334155; border-radius: 8px; color: #F1F5F9; font-size: 14px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; background: #0F172A; border: 1px solid #334155; border-radius: 8px; color: #F1F5F9; font-size: 14px; }
     .form-group textarea { height: 80px; resize: vertical; }
     .word-count { font-size: 11px; color: #94A3B8; margin-top: 4px; }
     .word-count.error { color: #EF4444; }
     .modal-btns { display: flex; gap: 12px; justify-content: flex-end; }
-    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; }
-    .btn-primary { background: #6366F1; color: white; }
-    .btn-secondary { background: #334155; color: #F1F5F9; }
     .error-msg { color: #EF4444; font-size: 13px; margin-bottom: 12px; display: none; }
-    .success-msg { color: #22C55E; font-size: 13px; margin-bottom: 12px; display: none; }
     @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .panel { border-right: none; border-bottom: 1px solid #334155; } }
   </style>
 </head>
 <body>
   <div class="header">
     <h1>MyScheduler</h1>
-    <p>Select a date and time to request a meeting</p>
+    <div class="header-btns">
+      <button class="btn btn-secondary" onclick="copyBookingLink()">Copy Booking Link</button>
+      <button class="btn btn-secondary" onclick="openRequestsDrawer()">Requests <span class="badge" id="badge">0</span></button>
+      <button class="btn btn-primary" onclick="openAddSlot()">+ Add to Schedule</button>
+    </div>
   </div>
   <div class="layout">
     <div class="panel">
-      <h2>Select a Date</h2>
+      <h2>Calendar</h2>
       <div class="calendar-header">
         <button onclick="changeMonth(-1)">&#8592;</button>
         <span id="monthYear"></span>
         <button onclick="changeMonth(1)">&#8594;</button>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
-      <div class="past-bookings-section">
-        <h3>View My Past Requests</h3>
-        <div class="past-input">
-          <input type="email" id="pastEmail" placeholder="Enter your email" />
-          <button onclick="loadPastBookings()">Search</button>
-        </div>
-        <div id="pastBookingsContainer"></div>
-      </div>
     </div>
     <div class="panel">
-      <h2>Available Times for <span id="selectedDateLabel">—</span></h2>
-      <div id="timesContainer"><p style="color:#94A3B8">Select a date to see availability.</p></div>
+      <h2>Schedule for <span id="selectedDateLabel">Today</span></h2>
+      <div id="slotsContainer"><p style="color:#94A3B8">Select a date to view slots.</p></div>
+      <div class="status-counts">
+        <div class="count-item completed"><div class="count-num" id="countCompleted">0</div><div class="count-label">Completed</div></div>
+        <div class="count-item rescheduled"><div class="count-num" id="countRescheduled">0</div><div class="count-label">Rescheduled</div></div>
+        <div class="count-item cancelled"><div class="count-num" id="countCancelled">0</div><div class="count-label">Cancelled</div></div>
+      </div>
     </div>
     <div class="panel">
       <h2>AI Assistant</h2>
       <div class="chat-messages" id="chatMessages">
-        <div class="message ai"><div class="message-bubble">Hi! I can help you check availability and book a meeting. What date works for you?</div></div>
+        <div class="message ai"><div class="message-bubble">Hi! I'm your scheduling assistant. Ask me anything about your schedule!</div></div>
       </div>
       <div class="chat-input">
-        <input type="text" id="chatInput" placeholder="Ask about availability..." onkeydown="if(event.key==='Enter') sendMessage()" />
+        <input type="text" id="chatInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter') sendMessage()" />
         <button onclick="sendMessage()">Send</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="bookingModal">
+  <div class="modal-overlay" id="addSlotModal">
     <div class="modal">
-      <h3>Request a Meeting</h3>
-      <div class="error-msg" id="bookingError"></div>
-      <div class="success-msg" id="bookingSuccess"></div>
+      <h3>Add to Schedule</h3>
+      <div class="error-msg" id="slotError"></div>
       <div class="form-group">
-        <label>Your Name *</label>
-        <input type="text" id="visitorName" placeholder="Enter your name" />
+        <label>Category</label>
+        <select id="slotCategory">
+          <option>Meeting</option>
+          <option>Brainstorming</option>
+          <option>Event Participation</option>
+          <option>Learnings</option>
+          <option>Others</option>
+        </select>
       </div>
       <div class="form-group">
-        <label>Your Email *</label>
-        <input type="email" id="visitorEmail" placeholder="Enter your email" />
+        <label>Title</label>
+        <input type="text" id="slotTitle" placeholder="Enter title" />
       </div>
       <div class="form-group">
         <label>Date</label>
-        <input type="text" id="bookingDate" readonly />
+        <input type="date" id="slotDate" />
       </div>
       <div class="form-group">
-        <label>Start Time</label>
-        <input type="text" id="bookingStart" readonly />
+        <label>Start Time (IST, min 5:00 AM)</label>
+        <input type="time" id="slotStart" min="05:00" max="23:00" />
       </div>
       <div class="form-group">
-        <label>End Time *</label>
-        <input type="time" id="bookingEnd" />
+        <label>End Time (IST, max 11:00 PM)</label>
+        <input type="time" id="slotEnd" min="05:00" max="23:00" />
       </div>
       <div class="form-group">
-        <label>Reason for Meeting (min 25 words) *</label>
-        <textarea id="bookingDesc" oninput="updateBookingWordCount()" placeholder="Describe why you want to meet..."></textarea>
-        <div class="word-count" id="bookingWordCount">0 / 25 words minimum</div>
+        <label>Description (min 25 words)</label>
+        <textarea id="slotDesc" oninput="updateWordCount()" placeholder="Describe this slot..."></textarea>
+        <div class="word-count" id="wordCount">0 / 25 words minimum</div>
       </div>
       <div class="modal-btns">
-        <button class="btn btn-secondary" onclick="closeBookingModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitBooking()">Submit Request</button>
+        <button class="btn btn-secondary" onclick="closeAddSlot()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitSlot()">Add Slot</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="requestsDrawer">
+    <div class="modal" style="width:560px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>Booking Requests</h3>
+        <button class="btn btn-secondary" onclick="closeRequestsDrawer()">Close</button>
+      </div>
+      <div id="requestsContainer"><p style="color:#94A3B8">Loading...</p></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="remarksModal">
+    <div class="modal" style="width:400px">
+      <h3 id="remarksTitle">Add Remarks</h3>
+      <div class="form-group">
+        <label>Your Message</label>
+        <textarea id="remarksText" style="height:100px"></textarea>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeRemarksModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitRemarks()">Send</button>
       </div>
     </div>
   </div>
 
   <script>
-    emailjs.init('o0EwTVp7WtONi-e8k');
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
+    const EMAILJS_SERVICE = 'service_88v685e';
+    const EMAILJS_PUBLIC = 'o0EwTVp7WtONi-e8k';
+    const TEMPLATE_VISITOR = 'template_u0x07ob';
+
+    if (!sessionStorage.getItem('auth')) window.location.href = '/';
+
+    emailjs.init(EMAILJS_PUBLIC);
 
     let currentDate = new Date();
     let selectedDate = null;
-    let selectedStartTime = null;
-    let chatHistory = [];
+    let currentRemarkAction = null;
+    let currentRemarkRequestId = null;
+    let currentRemarkEmail = null;
+    let currentRemarkDate = null;
+    let currentRemarkStart = null;
+    let currentRemarkEnd = null;
+    let currentRemarkName = null;
 
     async function supabaseFetch(path, method = 'GET', body = null) {
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
@@ -169,6 +214,67 @@
       const text = await res.text();
       return text ? JSON.parse(text) : {};
     }
+
+    async function loadSlots(dateStr) {
+      const data = await supabaseFetch('schedules?date=eq.' + dateStr + '&order=start_time');
+      renderSlots(data);
+      loadStatusCounts();
+    }
+
+    async function loadStatusCounts() {
+      const completed = await supabaseFetch('schedules?status=eq.completed&select=id');
+      const rescheduled = await supabaseFetch('schedules?status=eq.rescheduled&select=id');
+      const cancelled = await supabaseFetch('schedules?status=eq.cancelled&select=id');
+      document.getElementById('countCompleted').textContent = completed.length || 0;
+      document.getElementById('countRescheduled').textContent = rescheduled.length || 0;
+      document.getElementById('countCancelled').textContent = cancelled.length || 0;
+    }
+
+    function toIST(timeStr) { return timeStr ? timeStr.slice(0,5) : ''; }
+
+    function renderSlots(slots) {
+      const container = document.getElementById('slotsContainer');
+      if (!slots || !slots.length) { container.innerHTML = '<p style="color:#94A3B8">No slots for this date.</p>'; return; }
+      container.innerHTML = slots.map(s => `
+        <div class="slot-card ${s.status}">
+          <div class="slot-title">${s.title}</div>
+          <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
+          <div class="slot-category">${s.category}</div>
+          <div class="slot-actions">
+            ${s.status === 'upcoming' ? `
+              <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
+              <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
+              <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
+              <button class="btn-cancel" onclick="cancelSlot('${s.id}')">Cancel</button>
+            ` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function updateStatus(id, status) {
+      if (!confirm('Are you sure?')) return;
+      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status });
+      reloadSlots();
+    }
+
+    async function cancelSlot(id) {
+      if (!confirm('Cancel this slot?')) return;
+      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status: 'cancelled' });
+      reloadSlots();
+    }
+
+    function reloadSlots() {
+      if (selectedDate) {
+        const y = selectedDate.getFullYear();
+        const m = String(selectedDate.getMonth()+1).padStart(2,'0');
+        const d = String(selectedDate.getDate()).padStart(2,'0');
+        loadSlots(`${y}-${m}-${d}`);
+      }
+    }
+
+    function editSlot(id) { alert('Edit coming soon!'); }
+    function rescheduleSlot(id) { alert('Reschedule coming soon!'); }
 
     function renderCalendar() {
       const year = currentDate.getFullYear();
@@ -193,8 +299,6 @@
         const el = document.createElement('div');
         el.className = 'day';
         el.textContent = d;
-        const thisDate = new Date(year, month, d);
-        if (thisDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) el.classList.add('past');
         if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) el.classList.add('today');
         if (selectedDate && selectedDate.getFullYear() === year && selectedDate.getMonth() === month && selectedDate.getDate() === d) el.classList.add('selected');
         el.onclick = () => selectDate(year, month, d);
@@ -204,128 +308,53 @@
 
     function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); renderCalendar(); }
 
-    async function selectDate(year, month, day) {
+    function selectDate(year, month, day) {
       selectedDate = new Date(year, month, day);
       document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
-      document.getElementById('timesContainer').innerHTML = '<p style="color:#94A3B8">Loading availability...</p>';
+      document.getElementById('slotDate').value = selectedDate.toISOString().split('T')[0];
+      reloadSlots();
       renderCalendar();
-      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
-      renderTimeline(slots, dateStr);
     }
 
-    function renderTimeline(bookedSlots, dateStr) {
-      const container = document.getElementById('timesContainer');
-      container.innerHTML = '';
-      let html = '';
-      let hasAvailable = false;
-      for (let h = 5; h < 23; h++) {
-        const startStr = String(h).padStart(2,'0') + ':00:00';
-        const endStr = String(h+1).padStart(2,'0') + ':00:00';
-        const isBooked = bookedSlots.some(s => s.start_time < endStr && s.end_time > startStr);
-        if (isBooked) {
-          html += `<div class="time-slot booked">🔒 Booked: ${startStr.slice(0,5)} — ${endStr.slice(0,5)}</div>`;
-        } else {
-          hasAvailable = true;
-          html += `<div class="time-slot available" onclick="openBookingModal('${dateStr}', '${startStr}', '${endStr}')">✅ ${startStr.slice(0,5)} — ${endStr.slice(0,5)} Available</div>`;
-        }
-      }
-      if (!hasAvailable) html = '<p style="color:#94A3B8">No available slots on this date.</p>';
-      container.innerHTML = html;
+    function copyBookingLink() {
+      navigator.clipboard.writeText(window.location.origin + '/book');
+      alert('Link copied!');
     }
 
-    function openBookingModal(date, startTime, endTime) {
-      selectedStartTime = startTime;
-      document.getElementById('bookingDate').value = date;
-      document.getElementById('bookingStart').value = startTime.slice(0,5);
-      document.getElementById('bookingEnd').value = endTime.slice(0,5);
-      document.getElementById('visitorName').value = '';
-      document.getElementById('visitorEmail').value = '';
-      document.getElementById('bookingDesc').value = '';
-      document.getElementById('bookingWordCount').textContent = '0 / 25 words minimum';
-      document.getElementById('bookingError').style.display = 'none';
-      document.getElementById('bookingSuccess').style.display = 'none';
-      document.getElementById('bookingModal').classList.add('active');
-    }
+    function openAddSlot() { document.getElementById('addSlotModal').classList.add('active'); }
+    function closeAddSlot() { document.getElementById('addSlotModal').classList.remove('active'); }
 
-    function closeBookingModal() { document.getElementById('bookingModal').classList.remove('active'); }
-
-    function updateBookingWordCount() {
-      const words = document.getElementById('bookingDesc').value.trim().split(/\s+/).filter(w => w).length;
-      const el = document.getElementById('bookingWordCount');
+    function updateWordCount() {
+      const words = document.getElementById('slotDesc').value.trim().split(/\s+/).filter(w => w).length;
+      const el = document.getElementById('wordCount');
       el.textContent = words + ' / 25 words minimum';
       el.className = 'word-count' + (words < 25 ? ' error' : '');
     }
 
-    async function submitBooking() {
-      const name = document.getElementById('visitorName').value.trim();
-      const email = document.getElementById('visitorEmail').value.trim();
-      const date = document.getElementById('bookingDate').value;
-      const start = document.getElementById('bookingStart').value;
-      const end = document.getElementById('bookingEnd').value;
-      const desc = document.getElementById('bookingDesc').value.trim();
+    async function submitSlot() {
+      const title = document.getElementById('slotTitle').value.trim();
+      const date = document.getElementById('slotDate').value;
+      const start = document.getElementById('slotStart').value;
+      const end = document.getElementById('slotEnd').value;
+      const desc = document.getElementById('slotDesc').value.trim();
+      const category = document.getElementById('slotCategory').value;
       const words = desc.split(/\s+/).filter(w => w).length;
-      const errEl = document.getElementById('bookingError');
-      const successEl = document.getElementById('bookingSuccess');
+      const errEl = document.getElementById('slotError');
 
-      if (!name || !email || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
-      if (!/\S+@\S+\.\S+/.test(email)) { errEl.style.display='block'; errEl.textContent='Please enter a valid email.'; return; }
+      if (!title || !date || !start || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
       if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
-      if (end <= start) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+      if (start >= end) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+      if (start < '05:00') { errEl.style.display='block'; errEl.textContent='Start time must be after 5:00 AM.'; return; }
+      if (end > '23:00') { errEl.style.display='block'; errEl.textContent='End time must be before 11:00 PM.'; return; }
 
       const existing = await supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled');
       const overlap = existing.find(s => !(end <= s.start_time || start >= s.end_time));
-      if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no longer available, please choose another slot.'; return; }
+      if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
 
       errEl.style.display = 'none';
-      await supabaseFetch('booking_requests', 'POST', {
-        visitor_name: name, visitor_email: email, requested_date: date,
-        start_time: start, end_time: end, description: desc, status: 'pending'
-      });
-      emailjs.send('service_88v685e', 'template_e4ekmie', {
-        visitor_name: name, visitor_email: email, requested_date: date,
-        start_time: start, end_time: end, description: desc
-      });
-      successEl.style.display = 'block';
-      successEl.textContent = 'Your request has been submitted. You will receive an email once the owner reviews it.';
-      setTimeout(() => closeBookingModal(), 3000);
-    }
-
-    async function loadPastBookings() {
-      const email = document.getElementById('pastEmail').value.trim();
-      const container = document.getElementById('pastBookingsContainer');
-      if (!email) { container.innerHTML = '<p style="color:#EF4444;font-size:13px">Please enter your email.</p>'; return; }
-      container.innerHTML = '<p style="color:#94A3B8;font-size:13px">Loading...</p>';
-      const data = await supabaseFetch('booking_requests?visitor_email=eq.' + encodeURIComponent(email) + '&order=created_at.desc');
-      if (!data.length) { container.innerHTML = '<p style="color:#94A3B8;font-size:13px">No booking requests found for this email.</p>'; return; }
-      container.innerHTML = data.map(b => `
-        <div class="booking-card">
-          <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
-          <div style="font-size:13px;margin-bottom:4px">${b.requested_date} | ${b.start_time.slice(0,5)} — ${b.end_time.slice(0,5)}</div>
-          ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8">Remarks: ${b.owner_remarks}</div>` : ''}
-        </div>
-      `).join('');
-    }
-
-    async function executeChatBooking(details) {
-      try {
-        const existing = await supabaseFetch('schedules?date=eq.' + details.date + '&status=neq.cancelled');
-        const overlap = existing.find(s => !(details.end <= s.start_time || details.start >= s.end_time));
-        if (overlap) return '❌ Sorry, that time is no longer available. Please choose another slot.';
-        await supabaseFetch('booking_requests', 'POST', {
-          visitor_name: details.name, visitor_email: details.email,
-          requested_date: details.date, start_time: details.start,
-          end_time: details.end, description: details.desc, status: 'pending'
-        });
-        emailjs.send('service_88v685e', 'template_e4ekmie', {
-          visitor_name: details.name, visitor_email: details.email,
-          requested_date: details.date, start_time: details.start,
-          end_time: details.end, description: details.desc
-        });
-        return '✅ Your booking request has been submitted! You will receive an email once the owner reviews it.';
-      } catch(e) {
-        return '❌ Something went wrong. Please try again.';
-      }
+      await supabaseFetch('schedules', 'POST', { title, date, start_time: start, end_time: end, description: desc, category, status: 'upcoming', created_by: 'owner' });
+      closeAddSlot();
+      reloadSlots();
     }
 
     async function sendMessage() {
@@ -336,65 +365,142 @@
       container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
       input.value = '';
       container.scrollTop = container.scrollHeight;
-      chatHistory.push({ role: 'user', parts: [{ text: msg }] });
 
       const today = new Date();
-      const dateStr = selectedDate ?
-        `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}`
-        : `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      const y = today.getFullYear();
+      const m = String(today.getMonth()+1).padStart(2,'0');
+      const d = String(today.getDate()).padStart(2,'0');
+      const todayStr = `${y}-${m}-${d}`;
+      const slots = await supabaseFetch('schedules?date=eq.' + todayStr + '&order=start_time');
+      const pending = await supabaseFetch('booking_requests?status=eq.pending');
 
-      const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
-      const bookedTimes = slots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
-
-      const systemPrompt = `You are MyScheduler AI assistant for visitors. Today is ${dateStr} IST. Working hours: 5AM to 11PM IST. Booked times on selected date: ${JSON.stringify(bookedTimes)}.
-
-RULES:
-- NEVER reveal meeting titles, descriptions, or visitor names
-- Only tell available or booked status
-- If visitor wants to book, collect details one by one: 1) name, 2) email, 3) date, 4) start time, 5) end time, 6) reason (minimum 25 words)
-- After collecting all details, confirm with visitor once
-- Then reply EXACTLY like this on a single line:
-[BOOK] name=VALUE | email=VALUE | date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
-
-      const loadingId = 'loading-' + Date.now();
-      container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
-      container.scrollTop = container.scrollHeight;
+      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. Today's schedule: ${JSON.stringify(slots)}. Pending booking requests: ${JSON.stringify(pending)}. Help the owner manage their schedule. Always confirm before any write action.`;
 
       try {
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ systemPrompt, messages: chatHistory })
+          body: JSON.stringify({ systemPrompt, messages: [{ role: 'user', parts: [{ text: msg }] }] })
         });
         const data = await res.json();
-        document.getElementById(loadingId).remove();
         const reply = data.reply || 'Sorry, I could not process that.';
-        chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-
-        if (reply.includes('[BOOK]')) {
-          const bookLine = reply.split('\n').find(l => l.includes('[BOOK]'));
-          const parse = (key) => {
-            const match = bookLine.match(new RegExp(key + '=([^|]+)'));
-            return match ? match[1].trim() : '';
-          };
-          const details = {
-            name: parse('name'), email: parse('email'), date: parse('date'),
-            start: parse('start'), end: parse('end'), desc: parse('desc')
-          };
-          const result = await executeChatBooking(details);
-          container.innerHTML += `<div class="message ai"><div class="message-bubble">${result}</div></div>`;
-        } else {
-          container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
-        }
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
         container.scrollTop = container.scrollHeight;
       } catch(e) {
-        document.getElementById(loadingId) && document.getElementById(loadingId).remove();
         container.innerHTML += `<div class="message ai"><div class="message-bubble">Error connecting to AI.</div></div>`;
         container.scrollTop = container.scrollHeight;
       }
     }
 
+    async function loadPendingCount() {
+      const data = await supabaseFetch('booking_requests?status=eq.pending&select=id');
+      document.getElementById('badge').textContent = data.length || 0;
+    }
+
+    function openRequestsDrawer() {
+      document.getElementById('requestsDrawer').classList.add('active');
+      loadRequests();
+    }
+
+    function closeRequestsDrawer() {
+      document.getElementById('requestsDrawer').classList.remove('active');
+    }
+
+    async function loadRequests() {
+      const container = document.getElementById('requestsContainer');
+      container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
+      const data = await supabaseFetch('booking_requests?order=created_at.desc');
+      if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No requests yet.</p>'; return; }
+      container.innerHTML = data.map(r => `
+        <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-weight:bold">${r.visitor_name}</span>
+            <span style="color:#94A3B8;font-size:11px">${r.status.replace(/_/g,' ')}</span>
+          </div>
+          <div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${r.visitor_email}</div>
+          <div style="font-size:13px;margin-bottom:4px">${r.requested_date} | ${r.start_time.slice(0,5)} — ${r.end_time.slice(0,5)}</div>
+          <div style="font-size:13px;margin-bottom:12px;color:#CBD5E1">${r.description}</div>
+          ${r.status === 'pending' ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="acceptRequest('${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#22C55E;color:white" onclick="openRemarks('accept_remarks','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept with Remarks</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}')">Request Reschedule</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}')">Decline</button>
+          </div>` : `<div style="font-size:12px;color:#94A3B8">Remarks: ${r.owner_remarks || '—'}</div>`}
+        </div>
+      `).join('');
+    }
+
+    async function acceptRequest(id, email, date, start, end, name) {
+      if (!confirm('Accept this request?')) return;
+      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'accepted' });
+      await supabaseFetch('schedules', 'POST', {
+        title: 'Meeting with ' + name, date, start_time: start, end_time: end,
+        description: 'Visitor booking', category: 'Meeting', status: 'upcoming', created_by: 'visitor'
+      });
+      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+        visitor_name: name, visitor_email: email, requested_date: date,
+        start_time: start, end_time: end, description: 'Your meeting request has been accepted!'
+      });
+      loadRequests();
+      loadPendingCount();
+    }
+
+    function openRemarks(action, id, email, date, start, end, name) {
+      currentRemarkAction = action;
+      currentRemarkRequestId = id;
+      currentRemarkEmail = email;
+      currentRemarkDate = date;
+      currentRemarkStart = start;
+      currentRemarkEnd = end;
+      currentRemarkName = name;
+      const titles = { 'accept_remarks': 'Accept with Remarks', 'reschedule': 'Request Reschedule', 'decline': 'Decline Request' };
+      document.getElementById('remarksTitle').textContent = titles[action];
+      document.getElementById('remarksText').value = '';
+      document.getElementById('remarksModal').classList.add('active');
+    }
+
+    function closeRemarksModal() { document.getElementById('remarksModal').classList.remove('active'); }
+
+    async function submitRemarks() {
+      const remarks = document.getElementById('remarksText').value.trim();
+      if (currentRemarkAction === 'accept_remarks') {
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'accepted_with_remarks', owner_remarks: remarks });
+        await supabaseFetch('schedules', 'POST', {
+          title: 'Meeting with ' + currentRemarkName, date: currentRemarkDate,
+          start_time: currentRemarkStart, end_time: currentRemarkEnd,
+          description: 'Visitor booking', category: 'Meeting', status: 'upcoming', created_by: 'visitor'
+        });
+        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+          visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
+          requested_date: currentRemarkDate, start_time: currentRemarkStart,
+          end_time: currentRemarkEnd, description: 'Accepted with remarks: ' + remarks
+        });
+      } else if (currentRemarkAction === 'reschedule') {
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'reschedule_requested', owner_remarks: remarks });
+        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+          visitor_name: currentRemarkName || 'Visitor', visitor_email: currentRemarkEmail,
+          requested_date: '', start_time: '', end_time: '',
+          description: 'Reschedule requested: ' + remarks
+        });
+      } else if (currentRemarkAction === 'decline') {
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'declined', owner_remarks: remarks });
+        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+          visitor_name: currentRemarkName || 'Visitor', visitor_email: currentRemarkEmail,
+          requested_date: '', start_time: '', end_time: '',
+          description: 'Request declined. Reason: ' + remarks
+        });
+      }
+      closeRemarksModal();
+      loadRequests();
+      loadPendingCount();
+    }
+
     renderCalendar();
+    loadStatusCounts();
+    loadPendingCount();
+    const today = new Date();
+    selectDate(today.getFullYear(), today.getMonth(), today.getDate());
   </script>
 </body>
 </html>
