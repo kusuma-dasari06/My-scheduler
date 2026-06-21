@@ -379,6 +379,19 @@
       reloadSlots();
     }
 
+    function normalizeTime(t) {
+      if (!t) return t;
+      t = t.trim();
+      const match = t.match(/^(\d{1,2})(:(\d{2}))?\s*(am|pm|AM|PM)?$/);
+      if (!match) return t;
+      let hour = parseInt(match[1], 10);
+      const min = match[3] || '00';
+      const meridian = match[4] ? match[4].toLowerCase() : null;
+      if (meridian === 'pm' && hour < 12) hour += 12;
+      if (meridian === 'am' && hour === 12) hour = 0;
+      return String(hour).padStart(2, '0') + ':' + min;
+    }
+
     async function sendMessage() {
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
@@ -405,7 +418,7 @@ You can have a normal friendly conversation (greetings, small talk) and also hel
 
 When the owner asks something general like "hi" or "how are you", just reply normally and naturally with a short reply.
 
-When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a short description if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line:
+When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a short description if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format (e.g. 18:00, never 6pm or 6:00 PM):
 [ACTION:BOOK:title:date:HH:MM:HH:MM]
 
 When the owner wants to cancel a slot, identify the correct slot id from the schedule data above based on what they describe (e.g. "my 3pm meeting" or "tomorrow's call"), confirm with the owner, then once confirmed reply with EXACTLY:
@@ -414,11 +427,13 @@ When the owner wants to cancel a slot, identify the correct slot id from the sch
 When the owner wants to edit a slot's title or description, identify the slot id, confirm the new title with the owner, then once confirmed reply with EXACTLY:
 [ACTION:EDIT:slot_id:new_title]
 
-When the owner wants to reschedule a slot to a new date/time, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY:
+When the owner wants to reschedule a slot to a new date/time, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY this, with times in strict 24-hour HH:MM format (e.g. 18:00, never 6pm or 6:00 PM):
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM]
 
 When the owner wants to mark a slot as completed/done, identify the slot id, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:COMPLETE:slot_id]
+
+CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only (e.g. 06:00, 13:00, 18:00). Never write 6pm, 6:00 PM, or 6 PM inside an ACTION tag. Convert any time the owner mentions (like "6pm" or "6 in the evening") to 24-hour format before writing the ACTION tag.
 
 If multiple slots match the owner's description, ask which one they mean before taking action. Never take an action without the owner's explicit confirmation in the conversation.`;
 
@@ -448,10 +463,12 @@ If multiple slots match the owner's description, ask which one they mean before 
           }
         }
         if (reply.includes('[ACTION:BOOK:')) {
-          const match = reply.match(/\[ACTION:BOOK:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/);
+          const match = reply.match(/\[ACTION:BOOK:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*)\]/);
           if (match) {
+            const newStart = normalizeTime(match[3]);
+            const newEnd = normalizeTime(match[4]);
             await supabaseFetch('schedules', 'POST', {
-              title: match[1], date: match[2], start_time: match[3], end_time: match[4],
+              title: match[1], date: match[2], start_time: newStart, end_time: newEnd,
               description: 'Booked via AI', category: 'Meeting', status: 'upcoming', created_by: 'owner'
             });
             reloadSlots();
@@ -465,11 +482,13 @@ If multiple slots match the owner's description, ask which one they mean before 
           }
         }
         if (reply.includes('[ACTION:RESCHEDULE:')) {
-          const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/);
+          const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*)\]/);
           console.log('RESCHEDULE match:', match);
           if (match) {
+            const newStart = normalizeTime(match[3]);
+            const newEnd = normalizeTime(match[4]);
             const updateResult = await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
-              date: match[2], start_time: match[3], end_time: match[4], status: 'rescheduled'
+              date: match[2], start_time: newStart, end_time: newEnd, status: 'rescheduled'
             });
             console.log('RESCHEDULE update result:', updateResult);
             reloadSlots(); loadStatusCounts();
