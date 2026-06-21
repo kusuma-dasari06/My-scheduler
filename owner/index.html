@@ -466,10 +466,12 @@ If multiple slots match the owner's description, ask which one they mean before 
         }
         if (reply.includes('[ACTION:RESCHEDULE:')) {
           const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/);
+          console.log('RESCHEDULE match:', match);
           if (match) {
-            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
+            const updateResult = await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
               date: match[2], start_time: match[3], end_time: match[4], status: 'rescheduled'
             });
+            console.log('RESCHEDULE update result:', updateResult);
             reloadSlots(); loadStatusCounts();
           }
         }
