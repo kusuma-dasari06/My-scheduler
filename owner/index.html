@@ -283,10 +283,12 @@
     async function rescheduleSlot(id) {
       const newDate = prompt('Enter new date (YYYY-MM-DD):');
       if (!newDate) return;
-      const newStart = prompt('Enter new start time (HH:MM, 24hr):');
-      if (!newStart) return;
-      const newEnd = prompt('Enter new end time (HH:MM, 24hr):');
-      if (!newEnd) return;
+      const rawStart = prompt('Enter new start time (HH:MM, 24hr):');
+      if (!rawStart) return;
+      const rawEnd = prompt('Enter new end time (HH:MM, 24hr):');
+      if (!rawEnd) return;
+      const newStart = normalizeTime(rawStart);
+      const newEnd = normalizeTime(rawEnd);
 
       const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
       const overlap = existing.find(s => s.id !== id && !(newEnd <= s.start_time || newStart >= s.end_time));
