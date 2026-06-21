@@ -375,7 +375,17 @@
       const slots = await supabaseFetch('schedules?date=eq.' + todayStr + '&order=start_time');
       const pending = await supabaseFetch('booking_requests?status=eq.pending');
 
-      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. Today's schedule: ${JSON.stringify(slots)}. Pending booking requests: ${JSON.stringify(pending)}. Help the owner manage their schedule. Always confirm before any write action. Reply in plain text only, no stars, no markdown formatting.`;
+      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. Today's schedule: ${JSON.stringify(slots)}. Pending booking requests: ${JSON.stringify(pending)}.
+
+Help the owner manage their schedule. Reply in plain text only, no stars, no markdown.
+
+When owner confirms a cancel action, reply with EXACTLY this on a separate line:
+[ACTION:CANCEL:slot_id]
+
+When owner confirms booking a new slot, reply with EXACTLY:
+[ACTION:BOOK:title:date:HH:MM:HH:MM]
+
+Always confirm with owner before executing any action.`;
 
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
       if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
@@ -394,7 +404,27 @@
         document.getElementById(loadingId)?.remove();
         const reply = data.reply || 'Sorry, I could not process that.';
         chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-        container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
+
+        if (reply.includes('[ACTION:CANCEL:')) {
+          const match = reply.match(/\[ACTION:CANCEL:([^\]]+)\]/);
+          if (match) {
+            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'cancelled' });
+            reloadSlots();
+          }
+        }
+        if (reply.includes('[ACTION:BOOK:')) {
+          const match = reply.match(/\[ACTION:BOOK:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/);
+          if (match) {
+            await supabaseFetch('schedules', 'POST', {
+              title: match[1], date: match[2], start_time: match[3], end_time: match[4],
+              description: 'Booked via AI', category: 'Meeting', status: 'upcoming', created_by: 'owner'
+            });
+            reloadSlots();
+          }
+        }
+
+        const cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
         container.scrollTop = container.scrollHeight;
       } catch(e) {
         document.getElementById(loadingId)?.remove();
