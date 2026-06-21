@@ -34,10 +34,15 @@ In your Vercel project settings, add these as Environment Variables (NOT in conf
 - `OWNER_PASSWORD`
 
 ### 3. EmailJS Setup
-Sign up at emailjs.com and update these values directly in `owner/index.html` and `book/index.html`:
+Sign up at emailjs.com and create TWO templates:
+1. **Owner notification template** — To Email: your owner email (hardcoded)
+2. **Visitor notification template** — To Email: `{{visitor_email}}`
+
+Update these values directly in `owner/index.html` and `book/index.html`:
 - `EMAILJS_SERVICE`
 - `EMAILJS_PUBLIC`
-- Template ID
+- Template ID for owner notifications (used in book/index.html)
+- Template ID for visitor notifications (used in owner/index.html)
 
 ### 4. Supabase Tables
 Create two tables: `schedules` and `booking_requests`. Disable Row Level Security (RLS) on both, as this is a personal-use tool.
