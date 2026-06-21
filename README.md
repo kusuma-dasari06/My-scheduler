@@ -53,4 +53,3 @@ Create two tables: `schedules` and `booking_requests`. Disable Row Level Securit
 - Add proper authentication instead of a single shared password
 - Move EmailJS keys to environment variables as well
 - Add automated tests for booking conflict edge cases
--
