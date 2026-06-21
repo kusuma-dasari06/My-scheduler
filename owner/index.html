@@ -242,7 +242,7 @@
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
-            ${s.status === 'upcoming' ? `
+            ${(s.status === 'upcoming' || s.status === 'rescheduled') ? `
               <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
               <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
               <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
@@ -293,9 +293,9 @@
       if (overlap) { alert('This time overlaps with an existing slot!'); return; }
 
       await supabaseFetch('schedules?id=eq.' + id, 'PATCH', {
-        date: newDate, start_time: newStart, end_time: newEnd
+        date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled'
       });
-      reloadSlots();
+      reloadSlots(); loadStatusCounts();
     }
 
     function renderCalendar() {
@@ -468,7 +468,7 @@ If multiple slots match the owner's description, ask which one they mean before 
           const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/);
           if (match) {
             await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
-              date: match[2], start_time: match[3], end_time: match[4]
+              date: match[2], start_time: match[3], end_time: match[4], status: 'rescheduled'
             });
             reloadSlots(); loadStatusCounts();
           }
