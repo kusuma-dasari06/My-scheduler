@@ -396,6 +396,9 @@ When the owner wants to edit a slot's title or description, identify the slot id
 When the owner wants to reschedule a slot to a new date/time, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY:
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM]
 
+When the owner wants to mark a slot as completed/done, identify the slot id, confirm with the owner, then once confirmed reply with EXACTLY:
+[ACTION:COMPLETE:slot_id]
+
 If multiple slots match the owner's description, ask which one they mean before taking action. Never take an action without the owner's explicit confirmation in the conversation.`;
 
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
@@ -444,8 +447,15 @@ If multiple slots match the owner's description, ask which one they mean before 
           const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/);
           if (match) {
             await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
-              date: match[2], start_time: match[3], end_time: match[4], status: 'rescheduled'
+              date: match[2], start_time: match[3], end_time: match[4]
             });
+            reloadSlots(); loadStatusCounts();
+          }
+        }
+        if (reply.includes('[ACTION:COMPLETE:')) {
+          const match = reply.match(/\[ACTION:COMPLETE:([^\]]+)\]/);
+          if (match) {
+            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'completed' });
             reloadSlots(); loadStatusCounts();
           }
         }
