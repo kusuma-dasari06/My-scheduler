@@ -274,8 +274,29 @@
       }
     }
 
-    function editSlot(id) { alert('Edit coming soon!'); }
-    function rescheduleSlot(id) { alert('Reschedule coming soon!'); }
+    async function editSlot(id) {
+      const newTitle = prompt('Enter new title:');
+      if (!newTitle) return;
+      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
+      reloadSlots();
+    }
+    async function rescheduleSlot(id) {
+      const newDate = prompt('Enter new date (YYYY-MM-DD):');
+      if (!newDate) return;
+      const newStart = prompt('Enter new start time (HH:MM, 24hr):');
+      if (!newStart) return;
+      const newEnd = prompt('Enter new end time (HH:MM, 24hr):');
+      if (!newEnd) return;
+
+      const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
+      const overlap = existing.find(s => s.id !== id && !(newEnd <= s.start_time || newStart >= s.end_time));
+      if (overlap) { alert('This time overlaps with an existing slot!'); return; }
+
+      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', {
+        date: newDate, start_time: newStart, end_time: newEnd
+      });
+      reloadSlots();
+    }
 
     function renderCalendar() {
       const year = currentDate.getFullYear();
