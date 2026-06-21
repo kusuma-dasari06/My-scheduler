@@ -372,20 +372,31 @@
       const m = String(today.getMonth()+1).padStart(2,'0');
       const d = String(today.getDate()).padStart(2,'0');
       const todayStr = `${y}-${m}-${d}`;
-      const slots = await supabaseFetch('schedules?date=eq.' + todayStr + '&order=start_time');
+      const slots = await supabaseFetch('schedules?status=neq.cancelled&order=date,start_time');
       const pending = await supabaseFetch('booking_requests?status=eq.pending');
 
-      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. Today's schedule: ${JSON.stringify(slots)}. Pending booking requests: ${JSON.stringify(pending)}.
+      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST.
 
-Help the owner manage their schedule. Reply in plain text only, no stars, no markdown.
+All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
+Pending booking requests: ${JSON.stringify(pending)}
 
-When owner confirms a cancel action, reply with EXACTLY this on a separate line:
-[ACTION:CANCEL:slot_id]
+You can have a normal friendly conversation (greetings, small talk) and also help manage the schedule. Reply in plain text only, no stars, no markdown formatting. Keep replies short and directly answer only what was asked — do not add extra information, suggestions, or explanations unless the owner specifically asks for them.
 
-When owner confirms booking a new slot, reply with EXACTLY:
+When the owner asks something general like "hi" or "how are you", just reply normally and naturally with a short reply.
+
+When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a short description if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line:
 [ACTION:BOOK:title:date:HH:MM:HH:MM]
 
-Always confirm with owner before executing any action.`;
+When the owner wants to cancel a slot, identify the correct slot id from the schedule data above based on what they describe (e.g. "my 3pm meeting" or "tomorrow's call"), confirm with the owner, then once confirmed reply with EXACTLY:
+[ACTION:CANCEL:slot_id]
+
+When the owner wants to edit a slot's title or description, identify the slot id, confirm the new title with the owner, then once confirmed reply with EXACTLY:
+[ACTION:EDIT:slot_id:new_title]
+
+When the owner wants to reschedule a slot to a new date/time, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY:
+[ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM]
+
+If multiple slots match the owner's description, ask which one they mean before taking action. Never take an action without the owner's explicit confirmation in the conversation.`;
 
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
       if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
@@ -409,7 +420,7 @@ Always confirm with owner before executing any action.`;
           const match = reply.match(/\[ACTION:CANCEL:([^\]]+)\]/);
           if (match) {
             await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'cancelled' });
-            reloadSlots();
+            reloadSlots(); loadStatusCounts();
           }
         }
         if (reply.includes('[ACTION:BOOK:')) {
@@ -420,6 +431,22 @@ Always confirm with owner before executing any action.`;
               description: 'Booked via AI', category: 'Meeting', status: 'upcoming', created_by: 'owner'
             });
             reloadSlots();
+          }
+        }
+        if (reply.includes('[ACTION:EDIT:')) {
+          const match = reply.match(/\[ACTION:EDIT:([^:]+):([^\]]+)\]/);
+          if (match) {
+            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { title: match[2] });
+            reloadSlots();
+          }
+        }
+        if (reply.includes('[ACTION:RESCHEDULE:')) {
+          const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/);
+          if (match) {
+            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
+              date: match[2], start_time: match[3], end_time: match[4], status: 'rescheduled'
+            });
+            reloadSlots(); loadStatusCounts();
           }
         }
 
