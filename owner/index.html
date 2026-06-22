@@ -91,6 +91,7 @@
         <button onclick="changeMonth(1)">&#8594;</button>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
+      <button class="btn btn-secondary" style="width:100%; margin-top:12px;" onclick="openChatHistory()">📜 Chat History</button>
     </div>
     <div class="panel">
       <h2>Schedule for <span id="selectedDateLabel">Today</span></h2>
@@ -112,7 +113,16 @@
       </div>
     </div>
   </div>
-
+<div class="modal-overlay" id="chatHistoryModal">
+  <div class="modal" style="width:500px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3>Chat History</h3>
+      <button class="btn btn-secondary" onclick="closeChatHistory()">Close</button>
+    </div>
+    <input type="date" id="chatHistoryDate" onchange="loadChatHistoryForDate()" style="width:100%; padding:10px; background:#0F172A; border:1px solid #334155; border-radius:8px; color:#F1F5F9; margin-bottom:16px;" />
+    <div id="chatHistoryContainer" style="max-height:400px; overflow-y:auto;"></div>
+  </div>
+</div>
   <div class="modal-overlay" id="addSlotModal">
     <div class="modal">
       <h3>Add to Schedule</h3>
@@ -587,7 +597,30 @@ If multiple slots match the owner's description, ask which one they mean before 
     }
 
     function closeRemarksModal() { document.getElementById('remarksModal').classList.remove('active'); }
+function openChatHistory() {
+  document.getElementById('chatHistoryModal').classList.add('active');
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  document.getElementById('chatHistoryDate').value = todayStr;
+  loadChatHistoryForDate();
+}
 
+function closeChatHistory() {
+  document.getElementById('chatHistoryModal').classList.remove('active');
+}
+
+async function loadChatHistoryForDate() {
+  const date = document.getElementById('chatHistoryDate').value;
+  const container = document.getElementById('chatHistoryContainer');
+  container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
+  const data = await supabaseFetch('chat_history?date=eq.' + date + '&order=created_at.asc');
+  if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No chat history for this date.</p>'; return; }
+  container.innerHTML = data.map(m => `
+    <div class="message ${m.role === 'user' ? 'user' : 'ai'}">
+      <div class="message-bubble">${m.message}</div>
+    </div>
+  `).join('');
+}
     async function submitRemarks() {
       const remarks = document.getElementById('remarksText').value.trim();
       if (currentRemarkAction === 'accept_remarks') {
