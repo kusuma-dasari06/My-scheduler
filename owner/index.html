@@ -400,6 +400,9 @@
       if (!msg) return;
       const container = document.getElementById('chatMessages');
       container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
+      const chatDate = new Date();
+const chatDateStr = chatDate.getFullYear() + '-' + String(chatDate.getMonth()+1).padStart(2,'0') + '-' + String(chatDate.getDate()).padStart(2,'0');
+await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'user', message: msg });
       input.value = '';
       container.scrollTop = container.scrollHeight;
 
@@ -506,6 +509,7 @@ If multiple slots match the owner's description, ask which one they mean before 
 
         const cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
         container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
+        await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'ai', message: cleanReply });
         container.scrollTop = container.scrollHeight;
       } catch(e) {
         document.getElementById(loadingId)?.remove();
