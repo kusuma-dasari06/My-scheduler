@@ -577,7 +577,7 @@ If multiple slots match the owner's description, ask which one they mean before 
           <div style="font-size:13px;margin-bottom:12px;color:#CBD5E1">${r.description}</div>
           ${r.status === 'pending' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="acceptRequest('${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept</button>
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="acceptRequest('${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}','${r.description.replace(/'/g, '')}')">Accept</button>
             <button class="btn" style="font-size:12px;padding:6px 12px;background:#22C55E;color:white" onclick="openRemarks('accept_remarks','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept with Remarks</button>
             <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}')">Request Reschedule</button>
             <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}')">Decline</button>
@@ -586,12 +586,12 @@ If multiple slots match the owner's description, ask which one they mean before 
       `).join('');
     }
 
-    async function acceptRequest(id, email, date, start, end, name) {
+    async function acceptRequest(id, email, date, start, end, name, desc) {
       if (!confirm('Accept this request?')) return;
       await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'accepted' });
       await supabaseFetch('schedules', 'POST', {
         title: 'Meeting with ' + name, date, start_time: start, end_time: end,
-        description: 'Visitor booking', category: 'Meeting', status: 'upcoming', created_by: 'visitor'
+        description: desc || 'Visitor booking', category: 'Meeting', status: 'upcoming', created_by: 'visitor'
       });
       emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
         visitor_name: name, visitor_email: email, requested_date: date,
@@ -660,7 +660,7 @@ async function loadChatHistoryForDate() {
           visitor_name: currentRemarkName || 'Visitor', visitor_email: currentRemarkEmail,
           requested_date: '', start_time: '', end_time: '',
           description: 'Reschedule requested: ' + remarks
-        });
+        });3
       } else if (currentRemarkAction === 'decline') {
         await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'declined', owner_remarks: remarks });
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
