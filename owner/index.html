@@ -515,8 +515,8 @@ When the owner wants to edit a slot's title or description, identify the slot id
 When the owner wants to reschedule a slot to a new date/time, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY this, with times in strict 24-hour HH:MM format (e.g. 18:00, never 6pm or 6:00 PM):
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM]
 
-When the owner wants to mark a slot as completed/done, identify the slot id from the schedule data, then ask the owner for the minutes of meeting (a short summary of what was discussed). Once the owner provides it, reply with EXACTLY this on its own line:
-[ACTION:COMPLETE:slot_id:minutes_of_meeting_text]
+When the owner wants to mark a slot as completed/done, identify the slot id from the schedule data, then ask the owner for the minutes of meeting as at least 5 separate points covering what was discussed. Collect the points one by one or as a list, and do not proceed until you have at least 5 points. Once you have 5 or more points, format them as a numbered list separated by the pipe character | (for example: 1. Discussed timeline|2. Agreed on next steps|3. Reviewed budget|4. Assigned tasks|5. Scheduled follow-up), then reply with EXACTLY this on its own line:
+[ACTION:COMPLETE:slot_id:point1|point2|point3|point4|point5]
 
 CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only (e.g. 06:00, 13:00, 18:00). Never write 6pm, 6:00 PM, or 6 PM inside an ACTION tag. Convert any time the owner mentions (like "6pm" or "6 in the evening") to 24-hour format before writing the ACTION tag.
 
