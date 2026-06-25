@@ -287,7 +287,7 @@
             <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Reason</button>
           </div>
           <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(s.description) || 'No reason provided.'}</div>
-          <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${escapeHtml(s.minutes_of_meeting) || 'No minutes recorded.'}</div>
+          <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${escapeHtml(s.minutes_of_meeting).replace(/\|/g, '\n') || 'No minutes recorded.'}</div>
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
