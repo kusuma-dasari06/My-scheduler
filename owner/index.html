@@ -118,6 +118,21 @@
       </div>
     </div>
   </div>
+  <div class="modal-overlay" id="momModal">
+  <div class="modal" style="width:450px">
+    <h3>Minutes of Meeting</h3>
+    <div class="error-msg" id="momError"></div>
+    <div class="form-group">
+      <label>Enter at least 5 points (one per line)</label>
+      <textarea id="momText" oninput="updateMomCount()" style="height:160px" placeholder="1. Discussed project timeline&#10;2. Agreed on next steps&#10;3. ..."></textarea>
+      <div class="word-count" id="momCount">0 / 5 points minimum</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeMomModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitMom()">Submit & Complete</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="chatHistoryModal">
   <div class="modal" style="width:500px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -272,7 +287,7 @@
             <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Reason</button>
           </div>
           <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(s.description) || 'No reason provided.'}</div>
-          <div class="slot-reason-box" id="mom-${s.id}">${escapeHtml(s.minutes_of_meeting) || 'No minutes recorded.'}</div>
+          <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${escapeHtml(s.minutes_of_meeting) || 'No minutes recorded.'}</div>
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
@@ -290,15 +305,37 @@
       `).join('');
     }
 
-    async function updateStatus(id, status) {
+    let currentMomSlotId = null;
+
+function updateStatus(id, status) {
   if (status === 'completed') {
-    const mom = prompt('Enter Minutes of Meeting:');
-    if (mom === null) return;
-    await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status, minutes_of_meeting: mom });
+    currentMomSlotId = id;
+    document.getElementById('momText').value = '';
+    document.getElementById('momError').style.display = 'none';
+    updateMomCount();
+    document.getElementById('momModal').classList.add('active');
   } else {
     if (!confirm('Are you sure?')) return;
-    await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status });
+    supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status }).then(reloadSlots);
   }
+}
+
+function closeMomModal() { document.getElementById('momModal').classList.remove('active'); }
+
+function updateMomCount() {
+  const lines = document.getElementById('momText').value.trim().split('\n').filter(l => l.trim().length > 0).length;
+  const el = document.getElementById('momCount');
+  el.textContent = lines + ' / 5 points minimum';
+  el.className = 'word-count' + (lines < 5 ? ' error' : '');
+}
+
+async function submitMom() {
+  const text = document.getElementById('momText').value.trim();
+  const lines = text.split('\n').filter(l => l.trim().length > 0).length;
+  const errEl = document.getElementById('momError');
+  if (lines < 5) { errEl.style.display = 'block'; errEl.textContent = 'Please enter at least 5 points.'; return; }
+  await supabaseFetch('schedules?id=eq.' + currentMomSlotId, 'PATCH', { status: 'completed', minutes_of_meeting: text });
+  closeMomModal();
   reloadSlots();
 }
 
