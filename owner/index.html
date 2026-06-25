@@ -257,6 +257,10 @@
       const box = document.getElementById('reason-' + id);
       if (box) box.classList.toggle('active');
     }
+    function toggleMom(id) {
+  const box = document.getElementById('mom-' + id);
+  if (box) box.classList.toggle('active');
+}
 
     function renderSlots(slots) {
       const container = document.getElementById('slotsContainer');
@@ -268,25 +272,35 @@
             <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Reason</button>
           </div>
           <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(s.description) || 'No reason provided.'}</div>
+          <div class="slot-reason-box" id="mom-${s.id}">${escapeHtml(s.minutes_of_meeting) || 'No minutes recorded.'}</div>
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
             ${(s.status === 'upcoming' || s.status === 'rescheduled') ? `
-              <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
-              <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
-              <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
-              <button class="btn-cancel" onclick="cancelSlot('${s.id}')">Cancel</button>
-            ` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
+  <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
+  <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
+  <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
+  <button class="btn-cancel" onclick="cancelSlot('${s.id}')">Cancel</button>
+` : s.status === 'completed' ? `
+  <span style="color:#94A3B8;font-size:12px">completed</span>
+  <button class="btn-reason" onclick="toggleMom('${s.id}')">📋 MoM</button>
+` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
           </div>
         </div>
       `).join('');
     }
 
     async function updateStatus(id, status) {
-      if (!confirm('Are you sure?')) return;
-      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status });
-      reloadSlots();
-    }
+  if (status === 'completed') {
+    const mom = prompt('Enter Minutes of Meeting:');
+    if (mom === null) return;
+    await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status, minutes_of_meeting: mom });
+  } else {
+    if (!confirm('Are you sure?')) return;
+    await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status });
+  }
+  reloadSlots();
+}
 
     async function cancelSlot(id) {
       if (!confirm('Cancel this slot?')) return;
@@ -464,8 +478,8 @@ When the owner wants to edit a slot's title or description, identify the slot id
 When the owner wants to reschedule a slot to a new date/time, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY this, with times in strict 24-hour HH:MM format (e.g. 18:00, never 6pm or 6:00 PM):
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM]
 
-When the owner wants to mark a slot as completed/done, identify the slot id, confirm with the owner, then once confirmed reply with EXACTLY:
-[ACTION:COMPLETE:slot_id]
+When the owner wants to mark a slot as completed/done, identify the slot id from the schedule data, then ask the owner for the minutes of meeting (a short summary of what was discussed). Once the owner provides it, reply with EXACTLY this on its own line:
+[ACTION:COMPLETE:slot_id:minutes_of_meeting_text]
 
 CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only (e.g. 06:00, 13:00, 18:00). Never write 6pm, 6:00 PM, or 6 PM inside an ACTION tag. Convert any time the owner mentions (like "6pm" or "6 in the evening") to 24-hour format before writing the ACTION tag.
 
@@ -529,12 +543,12 @@ If multiple slots match the owner's description, ask which one they mean before 
           }
         }
         if (reply.includes('[ACTION:COMPLETE:')) {
-          const match = reply.match(/\[ACTION:COMPLETE:([^\]]+)\]/);
-          if (match) {
-            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'completed' });
-            reloadSlots(); loadStatusCounts();
-          }
-        }
+  const match = reply.match(/\[ACTION:COMPLETE:([^:]+):([^\]]+)\]/);
+  if (match) {
+    await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'completed', minutes_of_meeting: match[2] });
+    reloadSlots(); loadStatusCounts();
+  }
+}
 
         const cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
         container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
