@@ -45,7 +45,7 @@ Update these values directly in `owner/index.html` and `book/index.html`:
 - Template ID for visitor notifications (used in owner/index.html)
 
 ### 4. Supabase Tables
-Create two tables: `schedules` and `booking_requests`. Disable Row Level Security (RLS) on both, as this is a personal-use tool.
+Create three tables: `schedules`,`booking_requests` and  'chat_history'. Disable Row Level Security (RLS) on all three, as this is a personal-use tool.
 
 ## Features
 - Owner dashboard with calendar and slot management (Add, Complete, Edit, Reschedule, Cancel)
@@ -53,6 +53,7 @@ Create two tables: `schedules` and `booking_requests`. Disable Row Level Securit
 - Email notifications for booking requests and owner decisions
 - Approval workflow with Accept, Accept with Remarks, Request Reschedule, Decline
 - AI chatbot for both owner (full schedule management via chat) and visitor (availability check, booking, with private details hidden)
+- Owner can view past AI chat conversations by date using the "Chat History" button on the dashboard
 
 ## What I'd Improve With More Time
 - Add proper authentication instead of a single shared password
