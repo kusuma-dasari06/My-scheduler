@@ -134,6 +134,32 @@
   </div>
 </div>
 <div class="modal-overlay" id="chatHistoryModal">
+  <div class="modal-overlay" id="rescheduleModal">
+  <div class="modal" style="width:450px">
+    <h3>Reschedule Meeting</h3>
+    <div class="error-msg" id="rescheduleError"></div>
+    <div class="form-group">
+      <label>New Date</label>
+      <input type="date" id="rescheduleDate" />
+    </div>
+    <div class="form-group">
+      <label>New Start Time</label>
+      <input type="time" id="rescheduleStart" />
+    </div>
+    <div class="form-group">
+      <label>New End Time</label>
+      <input type="time" id="rescheduleEnd" />
+    </div>
+    <div class="form-group">
+      <label>Reason for Reschedule</label>
+      <textarea id="rescheduleReason" placeholder="Why are you rescheduling?"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReschedule()">Confirm Reschedule</button>
+    </div>
+  </div>
+</div>
   <div class="modal" style="width:500px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h3>Chat History</h3>
@@ -276,6 +302,10 @@
   const box = document.getElementById('mom-' + id);
   if (box) box.classList.toggle('active');
 }
+function toggleRescheduleReason(id) {
+  const box = document.getElementById('reschedule-reason-' + id);
+  if (box) box.classList.toggle('active');
+}
 
     function renderSlots(slots) {
       const container = document.getElementById('slotsContainer');
@@ -288,6 +318,7 @@
           </div>
           <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(s.description) || 'No reason provided.'}</div>
           <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${escapeHtml(s.minutes_of_meeting).replace(/\|/g, '\n') || 'No minutes recorded.'}</div>
+          <div class="slot-reason-box" id="reschedule-reason-${s.id}" style="white-space:pre-line">${escapeHtml(s.reschedule_reason) || 'No reason provided.'}</div>
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
@@ -299,6 +330,9 @@
 ` : s.status === 'completed' ? `
   <span style="color:#94A3B8;font-size:12px">completed</span>
   <button class="btn-reason" onclick="toggleMom('${s.id}')">📋 MoM</button>
+` : s.status === 'rescheduled' ? `
+  <span style="color:#94A3B8;font-size:12px">rescheduled</span>
+  <button class="btn-reason" onclick="toggleRescheduleReason('${s.id}')">📝 Reason</button>
 ` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
           </div>
         </div>
@@ -360,26 +394,40 @@ async function submitMom() {
       await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
       reloadSlots();
     }
-    async function rescheduleSlot(id) {
-      const newDate = prompt('Enter new date (YYYY-MM-DD):');
-      if (!newDate) return;
-      const rawStart = prompt('Enter new start time (HH:MM, 24hr):');
-      if (!rawStart) return;
-      const rawEnd = prompt('Enter new end time (HH:MM, 24hr):');
-      if (!rawEnd) return;
-      const newStart = normalizeTime(rawStart);
-      const newEnd = normalizeTime(rawEnd);
+     let currentRescheduleSlotId = null;
 
-      const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
-      const overlap = existing.find(s => s.id !== id && !(newEnd <= s.start_time || newStart >= s.end_time));
-      if (overlap) { alert('This time overlaps with an existing slot!'); return; }
+function rescheduleSlot(id) {
+  currentRescheduleSlotId = id;
+  document.getElementById('rescheduleDate').value = '';
+  document.getElementById('rescheduleStart').value = '';
+  document.getElementById('rescheduleEnd').value = '';
+  document.getElementById('rescheduleReason').value = '';
+  document.getElementById('rescheduleError').style.display = 'none';
+  document.getElementById('rescheduleModal').classList.add('active');
+}
 
-      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', {
-        date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled'
-      });
-      reloadSlots(); loadStatusCounts();
-    }
+function closeRescheduleModal() { document.getElementById('rescheduleModal').classList.remove('active'); }
 
+async function submitReschedule() {
+  const newDate = document.getElementById('rescheduleDate').value;
+  const newStart = document.getElementById('rescheduleStart').value;
+  const newEnd = document.getElementById('rescheduleEnd').value;
+  const reason = document.getElementById('rescheduleReason').value.trim();
+  const errEl = document.getElementById('rescheduleError');
+
+  if (!newDate || !newStart || !newEnd || !reason) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+  if (newStart >= newEnd) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+
+  const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
+  const overlap = existing.find(s => s.id !== currentRescheduleSlotId && !(newEnd <= s.start_time || newStart >= s.end_time));
+  if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
+
+  await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId, 'PATCH', {
+    date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: reason
+  });
+  closeRescheduleModal();
+  reloadSlots(); loadStatusCounts();
+}{
     function renderCalendar() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
