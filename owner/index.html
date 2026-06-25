@@ -587,8 +587,9 @@ If multiple slots match the owner's description, ask which one they mean before 
   }
 }
 
-        const cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
-        container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
+        let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
+if (!cleanReply) cleanReply = 'Done! Your request has been processed.';
+container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
         await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'ai', message: cleanReply });
         container.scrollTop = container.scrollHeight;
       } catch(e) {
