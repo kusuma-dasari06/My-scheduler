@@ -453,7 +453,7 @@ You can have a normal friendly conversation (greetings, small talk) and also hel
 When the owner asks something general like "hi" or "how are you", just reply normally and naturally with a short reply.
 
 When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a short description if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format (e.g. 18:00, never 6pm or 6:00 PM):
-[ACTION:BOOK:title:date:HH:MM:HH:MM]
+[ACTION:BOOK:title:date:HH:MM:HH:MM:Description]
 
 When the owner wants to cancel a slot, identify the correct slot id from the schedule data above based on what they describe (e.g. "my 3pm meeting" or "tomorrow's call"), confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:CANCEL:slot_id]
@@ -497,13 +497,13 @@ If multiple slots match the owner's description, ask which one they mean before 
           }
         }
         if (reply.includes('[ACTION:BOOK:')) {
-          const match = reply.match(/\[ACTION:BOOK:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*)\]/);
+          const match = reply.match(/\[ACTION:BOOK:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*):([^\]]*)\]/);
           if (match) {
             const newStart = normalizeTime(match[3]);
             const newEnd = normalizeTime(match[4]);
             await supabaseFetch('schedules', 'POST', {
               title: match[1], date: match[2], start_time: newStart, end_time: newEnd,
-              description: 'Booked via AI', category: 'Meeting', status: 'upcoming', created_by: 'owner'
+              description: match[5] || 'Booked via AI assistant', category: 'Meeting', status: 'upcoming', created_by: 'owner'
             });
             reloadSlots();
           }
