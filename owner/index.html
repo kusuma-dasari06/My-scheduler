@@ -763,7 +763,7 @@ async function loadChatHistoryForDate() {
           visitor_name: currentRemarkName || 'Visitor', visitor_email: currentRemarkEmail,
           requested_date: '', start_time: '', end_time: '',
           description: 'Reschedule requested: ' + remarks
-        });3
+        });
       } else if (currentRemarkAction === 'decline') {
         await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'declined', owner_remarks: remarks });
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
