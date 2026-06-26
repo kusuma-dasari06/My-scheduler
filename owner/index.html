@@ -425,6 +425,16 @@ async function submitReschedule() {
   await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId, 'PATCH', {
     date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: reason
   });
+
+  const slotData = await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId + '&select=visitor_email,visitor_name');
+  if (slotData[0] && slotData[0].visitor_email) {
+    emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+      visitor_name: slotData[0].visitor_name || 'Visitor', visitor_email: slotData[0].visitor_email,
+      requested_date: newDate, start_time: newStart, end_time: newEnd,
+      description: 'Your meeting has been rescheduled. Reason: ' + reason
+    });
+  }
+
   closeRescheduleModal();
   reloadSlots(); loadStatusCounts();
 }
