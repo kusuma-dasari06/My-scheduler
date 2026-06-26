@@ -386,25 +386,41 @@ async function submitMom() {
       await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
       reloadSlots();
     }
-    async function rescheduleSlot(id) {
-      const newDate = prompt('Enter new date (YYYY-MM-DD):');
-      if (!newDate) return;
-      const rawStart = prompt('Enter new start time (HH:MM, 24hr):');
-      if (!rawStart) return;
-      const rawEnd = prompt('Enter new end time (HH:MM, 24hr):');
-      if (!rawEnd) return;
-      const newStart = normalizeTime(rawStart);
-      const newEnd = normalizeTime(rawEnd);
+    let currentRescheduleSlotId = null;
 
-      const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
-      const overlap = existing.find(s => s.id !== id && !(newEnd <= s.start_time || newStart >= s.end_time));
-      if (overlap) { alert('This time overlaps with an existing slot!'); return; }
+function rescheduleSlot(id) {
+  currentRescheduleSlotId = id;
+  document.getElementById('rescheduleDate').value = '';
+  document.getElementById('rescheduleStart').value = '';
+  document.getElementById('rescheduleEnd').value = '';
+  document.getElementById('rescheduleReason').value = '';
+  document.getElementById('rescheduleError').style.display = 'none';
+  document.getElementById('rescheduleModal').classList.add('active');
+}
 
-      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', {
-        date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled'
-      });
-      reloadSlots(); loadStatusCounts();
-    }
+function closeRescheduleModal() { document.getElementById('rescheduleModal').classList.remove('active'); }
+
+async function submitReschedule() {
+  const newDate = document.getElementById('rescheduleDate').value;
+  const newStart = document.getElementById('rescheduleStart').value;
+  const newEnd = document.getElementById('rescheduleEnd').value;
+  const reason = document.getElementById('rescheduleReason').value.trim();
+  const errEl = document.getElementById('rescheduleError');
+
+  if (!newDate || !newStart || !newEnd || !reason) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+  if (newStart >= newEnd) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+
+  const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
+  const overlap = existing.find(s => s.id !== currentRescheduleSlotId && !(newEnd <= s.start_time || newStart >= s.end_time));
+  if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
+
+  errEl.style.display = 'none';
+  await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId, 'PATCH', {
+    date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: reason
+  });
+  closeRescheduleModal();
+  reloadSlots(); loadStatusCounts();
+}
 
     function renderCalendar() {
       const year = currentDate.getFullYear();
