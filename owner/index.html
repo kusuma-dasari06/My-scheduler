@@ -322,7 +322,7 @@ function toggleRescheduleReason(id) {
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
-            ${(s.status === 'upcoming' || s.status === 'rescheduled') ? `
+            ${(s.status === 'upcoming') ? `
   <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
   <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
   <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
