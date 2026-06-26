@@ -427,6 +427,7 @@ async function submitReschedule() {
   });
 
   const slotData = await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId + '&select=visitor_email,visitor_name');
+  console.log('slotData:',slotData);
   if (slotData[0] && slotData[0].visitor_email) {
     emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
       visitor_name: slotData[0].visitor_name || 'Visitor', visitor_email: slotData[0].visitor_email,
