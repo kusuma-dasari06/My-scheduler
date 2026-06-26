@@ -302,6 +302,10 @@
   const box = document.getElementById('mom-' + id);
   if (box) box.classList.toggle('active');
 }
+function toggleRescheduleReason(id) {
+  const box = document.getElementById('reschedule-reason-' + id);
+  if (box) box.classList.toggle('active');
+}
 
     function renderSlots(slots) {
       const container = document.getElementById('slotsContainer');
@@ -314,6 +318,7 @@
           </div>
           <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(s.description) || 'No reason provided.'}</div>
           <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${escapeHtml(s.minutes_of_meeting).replace(/\|/g, '\n') || 'No minutes recorded.'}</div>
+          <div class="slot-reason-box" id="reschedule-reason-${s.id}" style="white-space:pre-line">${escapeHtml(s.reschedule_reason) || 'No reason provided.'}</div>
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
@@ -325,6 +330,9 @@
 ` : s.status === 'completed' ? `
   <span style="color:#94A3B8;font-size:12px">completed</span>
   <button class="btn-reason" onclick="toggleMom('${s.id}')">📋 MoM</button>
+` : s.status === 'rescheduled' ? `
+  <span style="color:#94A3B8;font-size:12px">rescheduled</span>
+  <button class="btn-reason" onclick="toggleRescheduleReason('${s.id}')">📝 Reason</button>
 ` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
           </div>
         </div>
