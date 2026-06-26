@@ -516,7 +516,7 @@ async function submitReschedule() {
       if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
 
       errEl.style.display = 'none';
-      await supabaseFetch('schedules', 'POST', { title, date, start_time: start, end_time: end, description: category + ' (' + desc + ')', category, status: 'upcoming', created_by: 'owner' });
+      await supabaseFetch('schedules', 'POST', { title, date, start_time: start, end_time: end, description: desc + ' (Booked by Owner)', category, status: 'upcoming', created_by: 'owner' });
       closeAddSlot();
       reloadSlots();
     }
@@ -615,7 +615,7 @@ If multiple slots match the owner's description, ask which one they mean before 
             const rawDesc = match[5] || 'Booked via AI assistant';
             await supabaseFetch('schedules', 'POST', {
               title: match[1], date: match[2], start_time: newStart, end_time: newEnd,
-              description: 'Booked via AI (' + rawDesc + ')', category: 'Meeting', status: 'upcoming', created_by: 'owner'
+              description: raeDesc + ' (Booked via AI by Owner)', category: 'Meeting', status: 'upcoming', created_by: 'owner'
             });
             reloadSlots();
           }
@@ -747,7 +747,7 @@ async function loadChatHistoryForDate() {
         await supabaseFetch('schedules', 'POST', {
           title: 'Meeting with ' + currentRemarkName, date: currentRemarkDate,
           start_time: currentRemarkStart, end_time: currentRemarkEnd,
-          description: 'Visitor booking (' + (currentRemarkDesc || 'No reason provided') + ')', category: 'Meeting', status: 'upcoming', created_by: 'visitor',
+          description: (currentRemarkDesc || 'No reason provided') + ' (Booked by Visitor - ' + currentRemarkName + ')', category: 'Meeting', status: 'upcoming', created_by: 'visitor',
           visitor_name: currentRemarkName, visitor_email: currentRemarkEmail
         });
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
