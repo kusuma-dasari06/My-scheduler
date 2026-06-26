@@ -322,17 +322,15 @@ function toggleRescheduleReason(id) {
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
-            ${(s.status === 'upcoming') ? `
+            ${(s.status === 'upcoming' || s.status === 'rescheduled') ? `
   <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
   <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
   <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
   <button class="btn-cancel" onclick="cancelSlot('${s.id}')">Cancel</button>
+  ${s.status === 'rescheduled' ? `<button class="btn-reason" onclick="toggleRescheduleReason('${s.id}')">📝 Reason</button>` : ''}
 ` : s.status === 'completed' ? `
   <span style="color:#94A3B8;font-size:12px">completed</span>
   <button class="btn-reason" onclick="toggleMom('${s.id}')">📋 MoM</button>
-` : s.status === 'rescheduled' ? `
-  <span style="color:#94A3B8;font-size:12px">rescheduled</span>
-  <button class="btn-reason" onclick="toggleRescheduleReason('${s.id}')">📝 Reason</button>
 ` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
           </div>
         </div>
