@@ -746,6 +746,9 @@ When the owner wants to reschedule a slot, identify the slot id, ask the owner f
 When the owner wants to mark a slot as completed/done, identify the slot id, ask for at least 5 minutes of meeting points, then reply with EXACTLY:
 [ACTION:COMPLETE:slot_id:point1|point2|point3|point4|point5]
 
+When the owner wants to accept a pending booking request, identify the request id from the pending booking requests list above, confirm with the owner, then once confirmed reply with EXACTLY:
+[ACTION:ACCEPT_REQUEST:request_id]
+
 CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Never take an action without the owner's explicit confirmation.`;
 
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
@@ -832,6 +835,29 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
             reloadSlots(); loadStatusCounts();
           }
         }
+        if (reply.includes('[ACTION:ACCEPT_REQUEST:')) {
+  const match = reply.match(/\[ACTION:ACCEPT_REQUEST:([^\]]+)\]/);
+  if (match) {
+    const reqData = await supabaseFetch('booking_requests?id=eq.' + match[1]);
+    if (reqData[0]) {
+      const r = reqData[0];
+      await supabaseFetch('booking_requests?id=eq.' + r.id, 'PATCH', { status: 'accepted' });
+      await supabaseFetch('schedules', 'POST', {
+        title: 'Meeting with ' + r.visitor_name,
+        date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
+        description: (r.description || 'No reason provided') + ' (Booked by Visitor - ' + r.visitor_name + ')',
+        category: 'Meeting', status: 'upcoming', created_by: 'visitor',
+        visitor_name: r.visitor_name, visitor_email: r.visitor_email
+      });
+      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+        visitor_name: r.visitor_name, visitor_email: r.visitor_email,
+        requested_date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
+        description: 'Your meeting request has been accepted!'
+      });
+      loadRequests(); loadPendingCount(); reloadSlots();
+    }
+  }
+}
 
         let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
         if (!cleanReply) cleanReply = 'Done! Your request has been processed.';
@@ -879,8 +905,8 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           ${r.status === 'pending' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="openRemarks('accept_remarks','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}','${(r.description||'').replace(/'/g,"&#39;")}')">Accept</button>
-            <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}','','','','${r.visitor_name}')">Request Reschedule</button>
-            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}','','','','${r.visitor_name}')">Decline</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Request Reschedule</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Decline</button>
           </div>` : `<div style="font-size:12px;color:#94A3B8">Remarks: ${r.owner_remarks || '—'}</div>`}
         </div>
       `).join('');
