@@ -593,13 +593,11 @@
       const errEl = document.getElementById('slotError');
 
       if (!title || !date || !start || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
-      if (!title || !date || !start || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
       const todayDateStr = new Date().toISOString().split('T')[0];
       if (date < todayDateStr) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
       if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
       if (start >= end) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
       if (start < '05:00') { errEl.style.display='block'; errEl.textContent='Start time must be after 5:00 AM.'; return; }
-      if (end > '23:00') { errEl.style.display='block'; errEl.textContent='End time must be before 11:00 PM.'; return; }
       if (end > '23:00') { errEl.style.display='block'; errEl.textContent='End time must be before 11:00 PM.'; return; }
       if (start < '13:00' && end > '12:00') { errEl.style.display='block'; errEl.textContent='12:00 PM to 1:00 PM is lunch break. No bookings allowed in this slot.'; return; }
 
