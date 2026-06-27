@@ -372,7 +372,14 @@ function logout() {
       document.getElementById('timesContainer').innerHTML = '<p style="color:#94A3B8">Loading availability...</p>';
       renderCalendar();
       const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
+      const [scheduleSlots, bookingSlots] = await Promise.all([
+  supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled'),
+  supabaseFetch('booking_requests?requested_date=eq.' + dateStr + '&status=neq.declined')
+]);
+const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
+  start_time: b.start_time,
+  end_time: b.end_time
+}))];
       renderTimeline(slots, dateStr);
     }
 
@@ -533,7 +540,14 @@ if (details.date === currentDate && details.start < currentTime) {
         `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}`
         : `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
-      const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
+      const [scheduleSlots, bookingSlots] = await Promise.all([
+  supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled'),
+  supabaseFetch('booking_requests?requested_date=eq.' + dateStr + '&status=neq.declined')
+]);
+const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
+  start_time: b.start_time,
+  end_time: b.end_time
+}))];
       const now = new Date();
 const currentTime = now.toTimeString().slice(0,5);
 
