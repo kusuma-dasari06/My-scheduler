@@ -560,6 +560,7 @@ Available slots today: ${allSlots.length ? allSlots.join(', ') : 'No slots avail
 
 STRICT RULES:
 - Reply in MAX 2 sentences. No exceptions.
+- Today's date is ${dateStr}. If user says "today", use this date. If "tomorrow", use next date. NEVER ask date again.
 - If user asks available slots, list ONLY the available slots above. Nothing else.
 - If user asks unavailable/booked slots, say which ones are NOT in the available list.
 - NEVER ask for name, email, or designation — those are already known from login.
