@@ -82,6 +82,7 @@
   <div class="header">
     <h1>MyScheduler</h1>
     <div class="header-btns">
+      <button class="btn btn-secondary" onclick="openDailyReport()">📊 Daily Report</button>
       <button class="btn btn-secondary" onclick="copyBookingLink()">Copy Booking Link</button>
       <button class="btn btn-secondary" onclick="openRequestsDrawer()">Requests <span class="badge" id="badge">0</span></button>
       <button class="btn btn-primary" onclick="openAddSlot()">+ Add to Schedule</button>
@@ -192,6 +193,22 @@
     </div>
   </div>
 
+  <!-- Daily Report Modal -->
+<div class="modal-overlay" id="dailyReportModal">
+  <div class="modal" style="width:560px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3>📊 Daily Report</h3>
+      <button class="btn btn-secondary" onclick="closeDailyReport()">Close</button>
+    </div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+      <input type="date" id="reportDate" style="flex:1;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;" />
+      <button class="btn btn-primary" onclick="generateReport()">Generate</button>
+    </div>
+    <div id="reportContainer" style="max-height:500px;overflow-y:auto;">
+      <p style="color:#94A3B8">Select a date and click Generate.</p>
+    </div>
+  </div>
+</div>
   <!-- Add Slot Modal -->
   <div class="modal-overlay" id="addSlotModal">
     <div class="modal">
@@ -841,6 +858,85 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
       loadPendingCount();
     }
 
+    function openDailyReport() {
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  document.getElementById('reportDate').value = todayStr;
+  document.getElementById('reportContainer').innerHTML = '<p style="color:#94A3B8">Select a date and click Generate.</p>';
+  document.getElementById('dailyReportModal').classList.add('active');
+}
+
+function closeDailyReport() {
+  document.getElementById('dailyReportModal').classList.remove('active');
+}
+
+async function generateReport() {
+  const date = document.getElementById('reportDate').value;
+  const container = document.getElementById('reportContainer');
+  if (!date) { container.innerHTML = '<p style="color:#EF4444">Please select a date.</p>'; return; }
+
+  container.innerHTML = '<p style="color:#94A3B8">Generating report...</p>';
+
+  const slots = await supabaseFetch('schedules?date=eq.' + date + '&order=start_time');
+  const bookingRequests = await supabaseFetch('booking_requests?requested_date=eq.' + date);
+
+  const completed = slots.filter(s => s.status === 'completed');
+  const cancelled = slots.filter(s => s.status === 'cancelled');
+  const rescheduled = slots.filter(s => s.status === 'rescheduled');
+  const upcoming = slots.filter(s => s.status === 'upcoming');
+
+  const systemPrompt = `You are a scheduling analytics assistant. Analyze the following data for ${date} and provide a concise daily report.
+
+Schedule data: ${JSON.stringify(slots)}
+Booking requests for this date: ${JSON.stringify(bookingRequests)}
+
+Provide a report with:
+1. Summary (total meetings, completed, cancelled, rescheduled, upcoming)
+2. Key observations about the day
+3. Any patterns or insights
+4. Recommendations for improvement
+
+Keep it concise and professional. Plain text only, no markdown stars.`;
+
+  try {
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemPrompt,
+        messages: [{ role: 'user', parts: [{ text: 'Generate daily report for ' + date }] }]
+      })
+    });
+    const data = await res.json();
+    const report = data.reply || 'Could not generate report.';
+
+    container.innerHTML = `
+      <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+          <div style="text-align:center;flex:1">
+            <div style="font-size:24px;font-weight:bold;color:#22C55E">${completed.length}</div>
+            <div style="font-size:11px;color:#94A3B8">Completed</div>
+          </div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:24px;font-weight:bold;color:#EF4444">${cancelled.length}</div>
+            <div style="font-size:11px;color:#94A3B8">Cancelled</div>
+          </div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:24px;font-weight:bold;color:#F59E0B">${rescheduled.length}</div>
+            <div style="font-size:11px;color:#94A3B8">Rescheduled</div>
+          </div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:24px;font-weight:bold;color:#6366F1">${upcoming.length}</div>
+            <div style="font-size:11px;color:#94A3B8">Upcoming</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #334155;padding-top:12px;font-size:13px;color:#CBD5E1;white-space:pre-wrap;line-height:1.6">${report}</div>
+      </div>
+    `;
+  } catch(e) {
+    container.innerHTML = '<p style="color:#EF4444">Error generating report. Please try again.</p>';
+  }
+}
     renderCalendar();
     loadStatusCounts();
     loadPendingCount();
