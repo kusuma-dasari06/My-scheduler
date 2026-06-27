@@ -540,7 +540,7 @@ const currentTime = now.toTimeString().slice(0,5);
 const filteredSlots = slots.filter(s => {
   return !(dateStr === now.toISOString().split('T')[0] && s.start_time.slice(0,5) < currentTime);
 });
-      const bookedTimes = filteredslots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
+      const bookedTimes = filteredSlots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
 
       const systemPrompt = `You are MyScheduler AI assistant for visitors. Today is ${dateStr} IST. Working hours: 5AM to 11PM IST. Booked times on selected date: ${JSON.stringify(bookedTimes)}.
 
