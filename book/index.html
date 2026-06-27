@@ -492,12 +492,16 @@ function logout() {
         const overlap = existing.find(s => !(details.end <= s.start_time || details.start >= s.end_time));
         if (overlap) return '❌ Sorry, that time is no longer available. Please choose another slot.';
         await supabaseFetch('booking_requests', 'POST', {
-          visitor_name: details.name, visitor_email: details.email,
-          requested_date: details.date, start_time: details.start,
-          end_time: details.end, description: details.desc, status: 'pending'
-        });
+  visitor_name: details.name + ' (' + details.designation + ')',
+  visitor_email: details.email,
+  requested_date: details.date,
+  start_time: details.start,
+  end_time: details.end,
+  description: details.desc,
+  status: 'pending'
+});
         emailjs.send('service_88v685e', 'template_e4ekmie', {
-          visitor_name: details.name, visitor_email: details.email,
+          visitor_name: details.name + ' (' + details.designation + ')', visitor_email: details.email,
           requested_date: details.date, start_time: details.start,
           end_time: details.end, description: details.desc
         });
