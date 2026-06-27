@@ -115,7 +115,9 @@
       </div>
       <div class="chat-input">
         <input type="text" id="chatInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter') sendMessage()" />
+        <button id="micBtn" onclick="toggleVoiceInput()" style="background:#334155;color:#F1F5F9;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:16px;">🎤</button>
         <button onclick="sendMessage()">Send</button>
+      </div>
       </div>
     </div>
   </div>
@@ -607,7 +609,76 @@
       closeAddSlot();
       reloadSlots();
     }
+let isListening = false;
+    let recognition = null;
+    let lastDetectedLang = 'en-IN';
 
+    function detectLanguage(text) {
+      const teluguPattern = /[\u0C00-\u0C7F]/;
+      return teluguPattern.test(text) ? 'te-IN' : 'en-IN';
+    }
+
+    function initRecognition(lang) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+        return null;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = lang;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('chatInput').value = transcript;
+        lastDetectedLang = detectLanguage(transcript);
+        sendMessage();
+      };
+      rec.onerror = function(event) {
+        console.log('Speech recognition error:', event.error);
+        isListening = false;
+        document.getElementById('micBtn').style.background = '#334155';
+      };
+      rec.onend = function() {
+        isListening = false;
+        document.getElementById('micBtn').style.background = '#334155';
+      };
+      return rec;
+    }
+
+    function toggleVoiceInput() {
+      const micBtn = document.getElementById('micBtn');
+      if (isListening) {
+        if (recognition) recognition.stop();
+        isListening = false;
+        micBtn.style.background = '#334155';
+        return;
+      }
+      recognition = initRecognition('en-IN');
+      if (!recognition) return;
+      isListening = true;
+      micBtn.style.background = '#6366F1';
+      try {
+        recognition.start();
+      } catch (e) {
+        console.log('Recognition start error:', e);
+        isListening = false;
+        micBtn.style.background = '#334155';
+      }
+    }
+
+    function speakText(text, lang) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const cleanText = text.replace(/\[ACTION:[^\]]+\]/g, '').trim();
+      if (!cleanText) return;
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = lang;
+      const voices = window.speechSynthesis.getVoices();
+      const matchedVoice = voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+      if (matchedVoice) utterance.voice = matchedVoice;
+      window.speechSynthesis.speak(utterance);
+    }
     function normalizeTime(t) {
       if (!t) return t;
       t = t.trim();
@@ -625,6 +696,7 @@
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
       if (!msg) return;
+      lastDetectedLang = detectLanguage(msg);
       const container = document.getElementById('chatMessages');
       container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
       const chatDate = new Date();
@@ -646,7 +718,10 @@
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
 Pending booking requests: ${JSON.stringify(pending)}
 
+LANGUAGE RULE: Always reply in the same language the owner used in their message. If the owner writes in Telugu, reply in Telugu (Telugu script). If the owner writes in English, reply in English.
+
 You can have a normal friendly conversation (greetings, small talk) and also help manage the schedule. Reply in plain text only, no stars, no markdown formatting. Keep replies short and directly answer only what was asked.
+
 
 When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a description of minimum 25 words explaining the purpose of the meeting. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
 [ACTION:BOOK:title:date:HH:MM:HH:MM:Description]
@@ -735,6 +810,7 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
         container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
         await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'ai', message: cleanReply });
         container.scrollTop = container.scrollHeight;
+        speakText(cleanReply, lastDetectedLang);
       } catch(e) {
         document.getElementById(loadingId)?.remove();
         container.innerHTML += `<div class="message ai"><div class="message-bubble">Error connecting to AI.</div></div>`;
