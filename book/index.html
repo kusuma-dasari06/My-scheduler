@@ -100,10 +100,18 @@
   </div>
 </div>
 <div id="mainApp" style="display:none;">
-  <div class="header">
+  <div class="header" style="display:flex;justify-content:space-between;align-items:center;">
+  <div>
     <h1>MyScheduler</h1>
     <p>Select a date and time to request a meeting</p>
   </div>
+
+  <button
+    onclick="logout()"
+    style="padding:8px 16px;background:#EF4444;color:white;border:none;border-radius:8px;cursor:pointer;">
+    Logout
+  </button>
+</div>
   <div class="layout">
     <div class="panel">
       <h2>Select a Date</h2>
@@ -224,8 +232,14 @@ async function handleLogin() {
     return;
   }
 
-  loggedInVisitor = data[0];
-  showMainApp();
+loggedInVisitor = data[0];
+
+localStorage.setItem(
+  'loggedInVisitor',
+  JSON.stringify(loggedInVisitor)
+);
+
+showMainApp();
 }
 async function handleRegister() {
   const name = document.getElementById('regName').value.trim();
@@ -289,6 +303,11 @@ function showMainApp() {
   }
 
   renderCalendar();
+}
+function logout() {
+  localStorage.removeItem('loggedInVisitor');
+  loggedInVisitor = null;
+  location.reload();
 }
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
@@ -549,7 +568,12 @@ RULES:
         container.scrollTop = container.scrollHeight;
       }
     }
+const savedVisitor = localStorage.getItem('loggedInVisitor');
 
+if (savedVisitor) {
+  loggedInVisitor = JSON.parse(savedVisitor);
+  showMainApp();
+}
   </script>
   </div>
 </body>
