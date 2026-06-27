@@ -118,57 +118,81 @@
       </div>
     </div>
   </div>
+
+  <!-- MoM Modal -->
   <div class="modal-overlay" id="momModal">
-  <div class="modal" style="width:450px">
-    <h3>Minutes of Meeting</h3>
-    <div class="error-msg" id="momError"></div>
-    <div class="form-group">
-      <label>Enter at least 5 points (one per line)</label>
-      <textarea id="momText" oninput="updateMomCount()" style="height:160px" placeholder="1. Discussed project timeline&#10;2. Agreed on next steps&#10;3. ..."></textarea>
-      <div class="word-count" id="momCount">0 / 5 points minimum</div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-secondary" onclick="closeMomModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitMom()">Submit & Complete</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="rescheduleModal">
-  <div class="modal" style="width:450px">
-    <h3>Reschedule Meeting</h3>
-    <div class="error-msg" id="rescheduleError"></div>
-    <div class="form-group">
-      <label>New Date</label>
-      <input type="date" id="rescheduleDate" />
-    </div>
-    <div class="form-group">
-      <label>New Start Time</label>
-      <input type="time" id="rescheduleStart" />
-    </div>
-    <div class="form-group">
-      <label>New End Time</label>
-      <input type="time" id="rescheduleEnd" />
-    </div>
-    <div class="form-group">
-      <label>Reason for Reschedule</label>
-      <textarea id="rescheduleReason" placeholder="Why are you rescheduling this meeting?"></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitReschedule()">Confirm Reschedule</button>
+    <div class="modal" style="width:450px">
+      <h3>Minutes of Meeting</h3>
+      <div class="error-msg" id="momError"></div>
+      <div class="form-group">
+        <label>Enter at least 5 points (one per line)</label>
+        <textarea id="momText" oninput="updateMomCount()" style="height:160px" placeholder="1. Discussed project timeline&#10;2. Agreed on next steps&#10;3. ..."></textarea>
+        <div class="word-count" id="momCount">0 / 5 points minimum</div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeMomModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitMom()">Submit & Complete</button>
+      </div>
     </div>
   </div>
-</div>
-<div class="modal-overlay" id="chatHistoryModal">
-  <div class="modal" style="width:500px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3>Chat History</h3>
-      <button class="btn btn-secondary" onclick="closeChatHistory()">Close</button>
+
+  <!-- Cancel Reason Modal -->
+  <div class="modal-overlay" id="cancelReasonModal">
+    <div class="modal" style="width:450px">
+      <h3>Cancel Meeting</h3>
+      <div class="error-msg" id="cancelReasonError"></div>
+      <div class="form-group">
+        <label>Reason for Cancellation *</label>
+        <textarea id="cancelReasonText" placeholder="Why are you cancelling this meeting?"></textarea>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeCancelReasonModal()">Back</button>
+        <button class="btn btn-cancel" onclick="submitCancelReason()">Confirm Cancel</button>
+      </div>
     </div>
-    <input type="date" id="chatHistoryDate" onchange="loadChatHistoryForDate()" style="width:100%; padding:10px; background:#0F172A; border:1px solid #334155; border-radius:8px; color:#F1F5F9; margin-bottom:16px;" />
-    <div id="chatHistoryContainer" style="max-height:400px; overflow-y:auto;"></div>
   </div>
-</div>
+
+  <!-- Reschedule Modal -->
+  <div class="modal-overlay" id="rescheduleModal">
+    <div class="modal" style="width:450px">
+      <h3>Reschedule Meeting</h3>
+      <div class="error-msg" id="rescheduleError"></div>
+      <div class="form-group">
+        <label>New Date</label>
+        <input type="date" id="rescheduleDate" />
+      </div>
+      <div class="form-group">
+        <label>New Start Time</label>
+        <input type="time" id="rescheduleStart" />
+      </div>
+      <div class="form-group">
+        <label>New End Time</label>
+        <input type="time" id="rescheduleEnd" />
+      </div>
+      <div class="form-group">
+        <label>Reason for Reschedule</label>
+        <textarea id="rescheduleReason" placeholder="Why are you rescheduling this meeting?"></textarea>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitReschedule()">Confirm Reschedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat History Modal -->
+  <div class="modal-overlay" id="chatHistoryModal">
+    <div class="modal" style="width:500px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>Chat History</h3>
+        <button class="btn btn-secondary" onclick="closeChatHistory()">Close</button>
+      </div>
+      <input type="date" id="chatHistoryDate" onchange="loadChatHistoryForDate()" style="width:100%; padding:10px; background:#0F172A; border:1px solid #334155; border-radius:8px; color:#F1F5F9; margin-bottom:16px;" />
+      <div id="chatHistoryContainer" style="max-height:400px; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Add Slot Modal -->
   <div class="modal-overlay" id="addSlotModal">
     <div class="modal">
       <h3>Add to Schedule</h3>
@@ -211,6 +235,7 @@
     </div>
   </div>
 
+  <!-- Requests Drawer -->
   <div class="modal-overlay" id="requestsDrawer">
     <div class="modal" style="width:560px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -221,6 +246,7 @@
     </div>
   </div>
 
+  <!-- Remarks Modal -->
   <div class="modal-overlay" id="remarksModal">
     <div class="modal" style="width:400px">
       <h3 id="remarksTitle">Add Remarks</h3>
@@ -243,7 +269,6 @@
     const TEMPLATE_VISITOR = 'template_u0x07ob';
 
     if (!sessionStorage.getItem('auth')) window.location.href = '/';
-
     emailjs.init(EMAILJS_PUBLIC);
 
     let currentDate = new Date();
@@ -256,6 +281,12 @@
     let currentRemarkStart = null;
     let currentRemarkEnd = null;
     let currentRemarkName = null;
+    let currentRemarkDesc = '';
+    let currentMomSlotId = null;
+    let currentRescheduleSlotId = null;
+    let currentCancelSlotId = null;
+    let currentCancelVisitorEmail = null;
+    let currentCancelVisitorName = null;
 
     async function supabaseFetch(path, method = 'GET', body = null) {
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
@@ -299,13 +330,17 @@
       if (box) box.classList.toggle('active');
     }
     function toggleMom(id) {
-  const box = document.getElementById('mom-' + id);
-  if (box) box.classList.toggle('active');
-}
-function toggleRescheduleReason(id) {
-  const box = document.getElementById('reschedule-reason-' + id);
-  if (box) box.classList.toggle('active');
-}
+      const box = document.getElementById('mom-' + id);
+      if (box) box.classList.toggle('active');
+    }
+    function toggleRescheduleReason(id) {
+      const box = document.getElementById('reschedule-reason-' + id);
+      if (box) box.classList.toggle('active');
+    }
+    function toggleCancelReason(id) {
+      const box = document.getElementById('cancel-reason-' + id);
+      if (box) box.classList.toggle('active');
+    }
 
     function renderSlots(slots) {
       const container = document.getElementById('slotsContainer');
@@ -317,65 +352,96 @@ function toggleRescheduleReason(id) {
             <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Reason</button>
           </div>
           <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(s.description) || 'No reason provided.'}</div>
-          <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${escapeHtml(s.minutes_of_meeting).replace(/\|/g, '\n') || 'No minutes recorded.'}</div>
-          <div class="slot-reason-box" id="reschedule-reason-${s.id}" style="white-space:pre-line">${escapeHtml(s.reschedule_reason) || 'No reason provided.'}</div>
+          <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${s.minutes_of_meeting ? escapeHtml(s.minutes_of_meeting).replace(/\|/g, '\n') : 'No minutes recorded.'}</div>
+          <div class="slot-reason-box" id="reschedule-reason-${s.id}">${escapeHtml(s.reschedule_reason) || 'No reason provided.'}</div>
+          <div class="slot-reason-box" id="cancel-reason-${s.id}">${escapeHtml(s.cancel_reason) || 'No reason provided.'}</div>
           <div class="slot-time">${toIST(s.start_time)} — ${toIST(s.end_time)} IST</div>
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
             ${(s.status === 'upcoming' || s.status === 'rescheduled') ? `
-  ${s.status === 'rescheduled' ? `<div style="color:#F59E0B;font-size:12px;margin-bottom:6px">rescheduled</div>` : ''}
-  <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
-  <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
-  <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
-  <button class="btn-cancel" onclick="cancelSlot('${s.id}')">Cancel</button>
-  ${s.status === 'rescheduled' ? `<button class="btn-reason" onclick="toggleRescheduleReason('${s.id}')">📝 Reason</button>` : ''}
-` : s.status === 'completed' ? `
-  <span style="color:#94A3B8;font-size:12px">completed</span>
-  <button class="btn-reason" onclick="toggleMom('${s.id}')">📋 MoM</button>
-` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
+              ${s.status === 'rescheduled' ? `<div style="color:#F59E0B;font-size:12px;margin-bottom:6px">rescheduled</div>` : ''}
+              <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
+              <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
+              <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
+              <button class="btn-cancel" onclick="cancelSlot('${s.id}','${escapeHtml(s.visitor_email||'')}','${escapeHtml(s.visitor_name||'')}')">Cancel</button>
+              ${s.status === 'rescheduled' ? `<button class="btn-reason" onclick="toggleRescheduleReason('${s.id}')">📝 Reschedule Reason</button>` : ''}
+            ` : s.status === 'completed' ? `
+              <span style="color:#94A3B8;font-size:12px">completed</span>
+              <button class="btn-reason" onclick="toggleMom('${s.id}')">📋 MoM</button>
+            ` : s.status === 'cancelled' ? `
+              <span style="color:#94A3B8;font-size:12px">cancelled</span>
+              <button class="btn-reason" onclick="toggleCancelReason('${s.id}')">📝 Cancel Reason</button>
+            ` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
           </div>
         </div>
       `).join('');
     }
 
-    let currentMomSlotId = null;
+    function updateStatus(id, status) {
+      if (status === 'completed') {
+        currentMomSlotId = id;
+        document.getElementById('momText').value = '';
+        document.getElementById('momError').style.display = 'none';
+        updateMomCount();
+        document.getElementById('momModal').classList.add('active');
+      } else {
+        if (!confirm('Are you sure?')) return;
+        supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status }).then(reloadSlots);
+      }
+    }
 
-function updateStatus(id, status) {
-  if (status === 'completed') {
-    currentMomSlotId = id;
-    document.getElementById('momText').value = '';
-    document.getElementById('momError').style.display = 'none';
-    updateMomCount();
-    document.getElementById('momModal').classList.add('active');
-  } else {
-    if (!confirm('Are you sure?')) return;
-    supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status }).then(reloadSlots);
-  }
-}
+    function closeMomModal() { document.getElementById('momModal').classList.remove('active'); }
 
-function closeMomModal() { document.getElementById('momModal').classList.remove('active'); }
+    function updateMomCount() {
+      const lines = document.getElementById('momText').value.trim().split('\n').filter(l => l.trim().length > 0).length;
+      const el = document.getElementById('momCount');
+      el.textContent = lines + ' / 5 points minimum';
+      el.className = 'word-count' + (lines < 5 ? ' error' : '');
+    }
 
-function updateMomCount() {
-  const lines = document.getElementById('momText').value.trim().split('\n').filter(l => l.trim().length > 0).length;
-  const el = document.getElementById('momCount');
-  el.textContent = lines + ' / 5 points minimum';
-  el.className = 'word-count' + (lines < 5 ? ' error' : '');
-}
-
-async function submitMom() {
-  const text = document.getElementById('momText').value.trim();
-  const lines = text.split('\n').filter(l => l.trim().length > 0).length;
-  const errEl = document.getElementById('momError');
-  if (lines < 5) { errEl.style.display = 'block'; errEl.textContent = 'Please enter at least 5 points.'; return; }
-  await supabaseFetch('schedules?id=eq.' + currentMomSlotId, 'PATCH', { status: 'completed', minutes_of_meeting: text });
-  closeMomModal();
-  reloadSlots();
-}
-
-    async function cancelSlot(id) {
-      if (!confirm('Cancel this slot?')) return;
-      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status: 'cancelled' });
+    async function submitMom() {
+      const text = document.getElementById('momText').value.trim();
+      const lines = text.split('\n').filter(l => l.trim().length > 0).length;
+      const errEl = document.getElementById('momError');
+      if (lines < 5) { errEl.style.display = 'block'; errEl.textContent = 'Please enter at least 5 points.'; return; }
+      await supabaseFetch('schedules?id=eq.' + currentMomSlotId, 'PATCH', { status: 'completed', minutes_of_meeting: text });
+      closeMomModal();
       reloadSlots();
+    }
+
+    function cancelSlot(id, visitorEmail, visitorName) {
+      currentCancelSlotId = id;
+      currentCancelVisitorEmail = visitorEmail;
+      currentCancelVisitorName = visitorName;
+      document.getElementById('cancelReasonText').value = '';
+      document.getElementById('cancelReasonError').style.display = 'none';
+      document.getElementById('cancelReasonModal').classList.add('active');
+    }
+
+    function closeCancelReasonModal() { document.getElementById('cancelReasonModal').classList.remove('active'); }
+
+    async function submitCancelReason() {
+      const reason = document.getElementById('cancelReasonText').value.trim();
+      const errEl = document.getElementById('cancelReasonError');
+      if (!reason) { errEl.style.display = 'block'; errEl.textContent = 'Please enter a reason for cancellation.'; return; }
+
+      await supabaseFetch('schedules?id=eq.' + currentCancelSlotId, 'PATCH', {
+        status: 'cancelled',
+        cancel_reason: reason
+      });
+
+      if (currentCancelVisitorEmail) {
+        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+          visitor_name: currentCancelVisitorName || 'Visitor',
+          visitor_email: currentCancelVisitorEmail,
+          requested_date: '', start_time: '', end_time: '',
+          description: 'Your meeting has been cancelled. Reason: ' + reason
+        });
+      }
+
+      closeCancelReasonModal();
+      reloadSlots();
+      loadStatusCounts();
     }
 
     function reloadSlots() {
@@ -393,52 +459,52 @@ async function submitMom() {
       await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
       reloadSlots();
     }
-    let currentRescheduleSlotId = null;
 
-function rescheduleSlot(id) {
-  currentRescheduleSlotId = id;
-  document.getElementById('rescheduleDate').value = '';
-  document.getElementById('rescheduleStart').value = '';
-  document.getElementById('rescheduleEnd').value = '';
-  document.getElementById('rescheduleReason').value = '';
-  document.getElementById('rescheduleError').style.display = 'none';
-  document.getElementById('rescheduleModal').classList.add('active');
-}
+    function rescheduleSlot(id) {
+      currentRescheduleSlotId = id;
+      document.getElementById('rescheduleDate').value = '';
+      document.getElementById('rescheduleStart').value = '';
+      document.getElementById('rescheduleEnd').value = '';
+      document.getElementById('rescheduleReason').value = '';
+      document.getElementById('rescheduleError').style.display = 'none';
+      document.getElementById('rescheduleModal').classList.add('active');
+    }
 
-function closeRescheduleModal() { document.getElementById('rescheduleModal').classList.remove('active'); }
+    function closeRescheduleModal() { document.getElementById('rescheduleModal').classList.remove('active'); }
 
-async function submitReschedule() {
-  const newDate = document.getElementById('rescheduleDate').value;
-  const newStart = document.getElementById('rescheduleStart').value;
-  const newEnd = document.getElementById('rescheduleEnd').value;
-  const reason = document.getElementById('rescheduleReason').value.trim();
-  const errEl = document.getElementById('rescheduleError');
+    async function submitReschedule() {
+      const newDate = document.getElementById('rescheduleDate').value;
+      const newStart = document.getElementById('rescheduleStart').value;
+      const newEnd = document.getElementById('rescheduleEnd').value;
+      const reason = document.getElementById('rescheduleReason').value.trim();
+      const errEl = document.getElementById('rescheduleError');
 
-  if (!newDate || !newStart || !newEnd || !reason) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
-  if (newStart >= newEnd) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+      if (!newDate || !newStart || !newEnd || !reason) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+      if (newStart >= newEnd) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
 
-  const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
-  const overlap = existing.find(s => s.id !== currentRescheduleSlotId && !(newEnd <= s.start_time || newStart >= s.end_time));
-  if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
+      const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
+      const overlap = existing.find(s => s.id !== currentRescheduleSlotId && !(newEnd <= s.start_time || newStart >= s.end_time));
+      if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
 
-  errEl.style.display = 'none';
-  await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId, 'PATCH', {
-    date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: reason
-  });
+      errEl.style.display = 'none';
+      await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId, 'PATCH', {
+        date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: reason
+      });
 
-  const slotData = await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId + '&select=visitor_email,visitor_name');
-  console.log('slotData:',slotData);
-  if (slotData[0] && slotData[0].visitor_email) {
-    emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
-      visitor_name: slotData[0].visitor_name || 'Visitor', visitor_email: slotData[0].visitor_email,
-      requested_date: newDate, start_time: newStart, end_time: newEnd,
-      description: 'Your meeting has been rescheduled. Reason: ' + reason
-    });
-  }
+      const slotData = await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId + '&select=visitor_email,visitor_name');
+      if (slotData[0] && slotData[0].visitor_email) {
+        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+          visitor_name: slotData[0].visitor_name || 'Visitor',
+          visitor_email: slotData[0].visitor_email,
+          requested_date: newDate, start_time: newStart, end_time: newEnd,
+          description: 'Your meeting has been rescheduled. Reason: ' + reason
+        });
+      }
 
-  closeRescheduleModal();
-  reloadSlots(); loadStatusCounts();
-}
+      closeRescheduleModal();
+      reloadSlots();
+      loadStatusCounts();
+    }
 
     function renderCalendar() {
       const year = currentDate.getFullYear();
@@ -516,7 +582,11 @@ async function submitReschedule() {
       if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
 
       errEl.style.display = 'none';
-      await supabaseFetch('schedules', 'POST', { title, date, start_time: start, end_time: end, description: desc + ' (Booked by Owner)', category, status: 'upcoming', created_by: 'owner' });
+      await supabaseFetch('schedules', 'POST', {
+        title, date, start_time: start, end_time: end,
+        description: desc + ' (Booked by Owner)',
+        category, status: 'upcoming', created_by: 'owner'
+      });
       closeAddSlot();
       reloadSlots();
     }
@@ -541,8 +611,8 @@ async function submitReschedule() {
       const container = document.getElementById('chatMessages');
       container.innerHTML += `<div class="message user"><div class="message-bubble">${msg}</div></div>`;
       const chatDate = new Date();
-const chatDateStr = chatDate.getFullYear() + '-' + String(chatDate.getMonth()+1).padStart(2,'0') + '-' + String(chatDate.getDate()).padStart(2,'0');
-await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'user', message: msg });
+      const chatDateStr = chatDate.getFullYear() + '-' + String(chatDate.getMonth()+1).padStart(2,'0') + '-' + String(chatDate.getDate()).padStart(2,'0');
+      await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'user', message: msg });
       input.value = '';
       container.scrollTop = container.scrollHeight;
 
@@ -559,28 +629,24 @@ await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'user', m
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
 Pending booking requests: ${JSON.stringify(pending)}
 
-You can have a normal friendly conversation (greetings, small talk) and also help manage the schedule. Reply in plain text only, no stars, no markdown formatting. Keep replies short and directly answer only what was asked — do not add extra information, suggestions, or explanations unless the owner specifically asks for them.
+You can have a normal friendly conversation (greetings, small talk) and also help manage the schedule. Reply in plain text only, no stars, no markdown formatting. Keep replies short and directly answer only what was asked.
 
-When the owner asks something general like "hi" or "how are you", just reply normally and naturally with a short reply.
-
-When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a description of minimum 25 words explaining the purpose of the meeting. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format (e.g. 18:00, never 6pm or 6:00 PM):
+When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a description of minimum 25 words explaining the purpose of the meeting. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
 [ACTION:BOOK:title:date:HH:MM:HH:MM:Description]
 
-When the owner wants to cancel a slot, identify the correct slot id from the schedule data above based on what they describe (e.g. "my 3pm meeting" or "tomorrow's call"), confirm with the owner, then once confirmed reply with EXACTLY:
+When the owner wants to cancel a slot, identify the correct slot id from the schedule data above, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:CANCEL:slot_id]
 
-When the owner wants to edit a slot's title or description, identify the slot id, confirm the new title with the owner, then once confirmed reply with EXACTLY:
+When the owner wants to edit a slot's title, identify the slot id, confirm the new title with the owner, then once confirmed reply with EXACTLY:
 [ACTION:EDIT:slot_id:new_title]
 
-When the owner wants to reschedule a slot to a new date/time, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY this, with times in strict 24-hour HH:MM format (e.g. 18:00, never 6pm or 6:00 PM):
+When the owner wants to reschedule a slot, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY this with times in strict 24-hour HH:MM format:
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM]
 
-When the owner wants to mark a slot as completed/done, identify the slot id from the schedule data, then ask the owner for the minutes of meeting as at least 5 separate points covering what was discussed. Collect the points one by one or as a list, and do not proceed until you have at least 5 points. Once you have 5 or more points, format them as a numbered list separated by the pipe character | (for example: 1. Discussed timeline|2. Agreed on next steps|3. Reviewed budget|4. Assigned tasks|5. Scheduled follow-up), then reply with EXACTLY this on its own line:
+When the owner wants to mark a slot as completed/done, identify the slot id, ask for at least 5 minutes of meeting points, then reply with EXACTLY:
 [ACTION:COMPLETE:slot_id:point1|point2|point3|point4|point5]
 
-CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only (e.g. 06:00, 13:00, 18:00). Never write 6pm, 6:00 PM, or 6 PM inside an ACTION tag. Convert any time the owner mentions (like "6pm" or "6 in the evening") to 24-hour format before writing the ACTION tag.
-
-If multiple slots match the owner's description, ask which one they mean before taking action. Never take an action without the owner's explicit confirmation in the conversation.`;
+CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Never take an action without the owner's explicit confirmation.`;
 
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
       if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
@@ -603,7 +669,7 @@ If multiple slots match the owner's description, ask which one they mean before 
         if (reply.includes('[ACTION:CANCEL:')) {
           const match = reply.match(/\[ACTION:CANCEL:([^\]]+)\]/);
           if (match) {
-            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'cancelled' });
+            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'cancelled', cancel_reason: 'Cancelled via AI assistant' });
             reloadSlots(); loadStatusCounts();
           }
         }
@@ -615,7 +681,8 @@ If multiple slots match the owner's description, ask which one they mean before 
             const rawDesc = match[5] || 'Booked via AI assistant';
             await supabaseFetch('schedules', 'POST', {
               title: match[1], date: match[2], start_time: newStart, end_time: newEnd,
-              description: raeDesc + ' (Booked via AI by Owner)', category: 'Meeting', status: 'upcoming', created_by: 'owner'
+              description: rawDesc + ' (Booked via AI by Owner)',
+              category: 'Meeting', status: 'upcoming', created_by: 'owner'
             });
             reloadSlots();
           }
@@ -629,28 +696,26 @@ If multiple slots match the owner's description, ask which one they mean before 
         }
         if (reply.includes('[ACTION:RESCHEDULE:')) {
           const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*)\]/);
-          console.log('RESCHEDULE match:', match);
           if (match) {
             const newStart = normalizeTime(match[3]);
             const newEnd = normalizeTime(match[4]);
-            const updateResult = await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
+            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
               date: match[2], start_time: newStart, end_time: newEnd, status: 'rescheduled'
             });
-            console.log('RESCHEDULE update result:', updateResult);
             reloadSlots(); loadStatusCounts();
           }
         }
         if (reply.includes('[ACTION:COMPLETE:')) {
-  const match = reply.match(/\[ACTION:COMPLETE:([^:]+):([^\]]+)\]/);
-  if (match) {
-    await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'completed', minutes_of_meeting: match[2] });
-    reloadSlots(); loadStatusCounts();
-  }
-}
+          const match = reply.match(/\[ACTION:COMPLETE:([^:]+):([^\]]+)\]/);
+          if (match) {
+            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'completed', minutes_of_meeting: match[2] });
+            reloadSlots(); loadStatusCounts();
+          }
+        }
 
         let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
-if (!cleanReply) cleanReply = 'Done! Your request has been processed.';
-container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
+        if (!cleanReply) cleanReply = 'Done! Your request has been processed.';
+        container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
         await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'ai', message: cleanReply });
         container.scrollTop = container.scrollHeight;
       } catch(e) {
@@ -691,8 +756,8 @@ container.innerHTML += `<div class="message ai"><div class="message-bubble">${cl
           ${r.status === 'pending' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="openRemarks('accept_remarks','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}','${(r.description||'').replace(/'/g,"&#39;")}')">Accept</button>
-            <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}')">Request Reschedule</button>
-            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}')">Decline</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}','','','','${r.visitor_name}')">Request Reschedule</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}','','','','${r.visitor_name}')">Decline</button>
           </div>` : `<div style="font-size:12px;color:#94A3B8">Remarks: ${r.owner_remarks || '—'}</div>`}
         </div>
       `).join('');
@@ -708,52 +773,53 @@ container.innerHTML += `<div class="message ai"><div class="message-bubble">${cl
       currentRemarkName = name;
       currentRemarkDesc = desc || '';
       const titles = { 'accept_remarks': 'Accept Meeting', 'reschedule': 'Request Reschedule', 'decline': 'Decline Request' };
-document.getElementById('remarksTitle').textContent = titles[action];
+      document.getElementById('remarksTitle').textContent = titles[action];
       document.getElementById('remarksText').value = '';
       document.getElementById('remarksModal').classList.add('active');
     }
 
     function closeRemarksModal() { document.getElementById('remarksModal').classList.remove('active'); }
-function openChatHistory() {
-  document.getElementById('chatHistoryModal').classList.add('active');
-  const today = new Date();
-  const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  document.getElementById('chatHistoryDate').value = todayStr;
-  loadChatHistoryForDate();
-}
 
-function closeChatHistory() {
-  document.getElementById('chatHistoryModal').classList.remove('active');
-}
+    function openChatHistory() {
+      document.getElementById('chatHistoryModal').classList.add('active');
+      const today = new Date();
+      const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      document.getElementById('chatHistoryDate').value = todayStr;
+      loadChatHistoryForDate();
+    }
 
-async function loadChatHistoryForDate() {
-  const date = document.getElementById('chatHistoryDate').value;
-  const container = document.getElementById('chatHistoryContainer');
-  container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
-  const data = await supabaseFetch('chat_history?date=eq.' + date + '&order=created_at.asc');
-  if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No chat history for this date.</p>'; return; }
-  container.innerHTML = data.map(m => `
-    <div class="message ${m.role === 'user' ? 'user' : 'ai'}">
-      <div class="message-bubble">${m.message}</div>
-    </div>
-  `).join('');
-}
-    let currentRemarkDesc = '';
+    function closeChatHistory() { document.getElementById('chatHistoryModal').classList.remove('active'); }
+
+    async function loadChatHistoryForDate() {
+      const date = document.getElementById('chatHistoryDate').value;
+      const container = document.getElementById('chatHistoryContainer');
+      container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
+      const data = await supabaseFetch('chat_history?date=eq.' + date + '&order=created_at.asc');
+      if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No chat history for this date.</p>'; return; }
+      container.innerHTML = data.map(m => `
+        <div class="message ${m.role === 'user' ? 'user' : 'ai'}">
+          <div class="message-bubble">${m.message}</div>
+        </div>
+      `).join('');
+    }
 
     async function submitRemarks() {
       const remarks = document.getElementById('remarksText').value.trim();
       if (currentRemarkAction === 'accept_remarks') {
-        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: remarks ? 'accepted_with_remarks' : 'accepted', owner_remarks: remarks });
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', {
+          status: remarks ? 'accepted_with_remarks' : 'accepted', owner_remarks: remarks
+        });
         await supabaseFetch('schedules', 'POST', {
-          title: 'Meeting with ' + currentRemarkName, date: currentRemarkDate,
-          start_time: currentRemarkStart, end_time: currentRemarkEnd,
-          description: (currentRemarkDesc || 'No reason provided') + ' (Booked by Visitor - ' + currentRemarkName + ')', category: 'Meeting', status: 'upcoming', created_by: 'visitor',
+          title: 'Meeting with ' + currentRemarkName,
+          date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
+          description: (currentRemarkDesc || 'No reason provided') + ' (Booked by Visitor - ' + currentRemarkName + ')',
+          category: 'Meeting', status: 'upcoming', created_by: 'visitor',
           visitor_name: currentRemarkName, visitor_email: currentRemarkEmail
         });
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
           visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
-          requested_date: currentRemarkDate, start_time: currentRemarkStart,
-          end_time: currentRemarkEnd, description: remarks ? ('Accepted with remarks: ' + remarks) : 'Your meeting request has been accepted!'
+          requested_date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
+          description: remarks ? ('Accepted with remarks: ' + remarks) : 'Your meeting request has been accepted!'
         });
       } else if (currentRemarkAction === 'reschedule') {
         await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'reschedule_requested', owner_remarks: remarks });
