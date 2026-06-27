@@ -574,6 +574,7 @@ Booked slots: ${bookedSlots.length ? bookedSlots.join(', ') : 'None'}.
 STRICT RULES:
 - Reply in MAX 2 sentences. No exceptions.
 - Today's date is ${dateStr}. If user says "today", use this date. If "tomorrow", use next date. NEVER ask date again.
+- When listing available slots, list EACH slot individually from the available slots list above. NEVER merge them into ranges. NEVER include booked slots.
 - If user asks available slots, list ONLY available slots.
 - If user asks booked/unavailable slots, list ONLY booked slots.
 - NEVER ask for name, email, or designation.
