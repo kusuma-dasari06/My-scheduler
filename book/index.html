@@ -534,7 +534,13 @@ if (details.date === currentDate && details.start < currentTime) {
         : `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
       const slots = await supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled');
-      const bookedTimes = slots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
+      const now = new Date();
+const currentTime = now.toTimeString().slice(0,5);
+
+const filteredSlots = slots.filter(s => {
+  return !(dateStr === now.toISOString().split('T')[0] && s.start_time.slice(0,5) < currentTime);
+});
+      const bookedTimes = filteredslots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
 
       const systemPrompt = `You are MyScheduler AI assistant for visitors. Today is ${dateStr} IST. Working hours: 5AM to 11PM IST. Booked times on selected date: ${JSON.stringify(bookedTimes)}.
 
