@@ -586,9 +586,10 @@ Available slots: ${allSlots.length ? allSlots.join(', ') : 'None'}.
 Booked slots: ${bookedSlots.length ? bookedSlots.join(', ') : 'None'}.
 
 STRICT RULES:
+- Before collecting ANY details, first check if the requested time is in the past. Today is ${dateStr} and current time is ${new Date().toTimeString().slice(0,5)}. If requested slot is already passed, immediately say "Sorry, that time has already passed. Please choose a future slot." Do NOT ask for description or any details.
 - Reply in MAX 2 sentences. No exceptions.
 - Today's date is ${dateStr}. If user says "today", use this date. If "tomorrow", use next date. NEVER ask date again.
-- When listing available slots, list EACH slot individually from the available slots list above. NEVER merge them into ranges. NEVER include booked slots.
+- When listing available slots, list EACH slot individually from the available slots list above. NEVER merge them into ranges. NEVER include booked slots. at the same time, give reply as gunshorted(simply shorten).
 - If user asks available slots, list ONLY available slots.
 - If user asks booked/unavailable slots, list ONLY booked slots.
 - NEVER ask for name, email, or designation.
