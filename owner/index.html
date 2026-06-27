@@ -612,6 +612,7 @@
 let isListening = false;
     let recognition = null;
     let lastDetectedLang = 'en-IN';
+    let isVoiceMessage = false;
 
     function detectLanguage(text) {
       const teluguPattern = /[\u0C00-\u0C7F]/;
@@ -632,6 +633,7 @@ let isListening = false;
         const transcript = event.results[0][0].transcript;
         document.getElementById('chatInput').value = transcript;
         lastDetectedLang = detectLanguage(transcript);
+        isVoiceMessage = true;
         sendMessage();
       };
       rec.onerror = function(event) {
@@ -810,13 +812,15 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
         container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
         await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'ai', message: cleanReply });
         container.scrollTop = container.scrollHeight;
-        speakText(cleanReply, lastDetectedLang);
+        if (isVoiceMessage) {
+          speakText(cleanReply, lastDetectedLang);
+        }
+        isVoiceMessage = false;
       } catch(e) {
         document.getElementById(loadingId)?.remove();
         container.innerHTML += `<div class="message ai"><div class="message-bubble">Error connecting to AI.</div></div>`;
         container.scrollTop = container.scrollHeight;
       }
-    }
 
     async function loadPendingCount() {
       const data = await supabaseFetch('booking_requests?status=eq.pending&select=id');
