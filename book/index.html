@@ -122,6 +122,10 @@
         <input type="email" id="visitorEmail" placeholder="Enter your email" />
       </div>
       <div class="form-group">
+  <label>Your Designation/Role *</label>
+  <input type="text" id="visitorDesignation" placeholder="e.g. Manager, Student, Client" />
+</div>
+      <div class="form-group">
         <label>Date</label>
         <input type="text" id="bookingDate" readonly />
       </div>
@@ -241,6 +245,7 @@
       document.getElementById('bookingEnd').value = endTime.slice(0,5);
       document.getElementById('visitorName').value = '';
       document.getElementById('visitorEmail').value = '';
+      document.getElementById('visitorDesignation').value = '';
       document.getElementById('bookingDesc').value = '';
       document.getElementById('bookingWordCount').textContent = '0 / 25 words minimum';
       document.getElementById('bookingError').style.display = 'none';
@@ -260,6 +265,7 @@
     async function submitBooking() {
       const name = document.getElementById('visitorName').value.trim();
       const email = document.getElementById('visitorEmail').value.trim();
+      const designation = document.getElementById('visitorDesignation').value.trim();
       const date = document.getElementById('bookingDate').value;
       const start = document.getElementById('bookingStart').value;
       const end = document.getElementById('bookingEnd').value;
@@ -268,7 +274,7 @@
       const errEl = document.getElementById('bookingError');
       const successEl = document.getElementById('bookingSuccess');
 
-      if (!name || !email || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+      if (!name || !email || !designation || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
       if (!/\S+@\S+\.\S+/.test(email)) { errEl.style.display='block'; errEl.textContent='Please enter a valid email.'; return; }
       if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
       if (end <= start) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
@@ -279,11 +285,11 @@
 
       errEl.style.display = 'none';
       await supabaseFetch('booking_requests', 'POST', {
-        visitor_name: name, visitor_email: email, requested_date: date,
+        visitor_name: name + ' (' + designation + ')', visitor_email: email, requested_date: date,
         start_time: start, end_time: end, description: desc, status: 'pending'
       });
       emailjs.send('service_88v685e', 'template_e4ekmie', {
-        visitor_name: name, visitor_email: email, requested_date: date,
+        visitor_name: name + ' (' + designation + ')', visitor_email: email, requested_date: date,
         start_time: start, end_time: end, description: desc
       });
       successEl.style.display = 'block';
