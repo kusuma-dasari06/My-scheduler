@@ -499,6 +499,8 @@
       const errEl = document.getElementById('rescheduleError');
 
       if (!newDate || !newStart || !newEnd || !reason) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+      const todayDateStr4 = new Date().toISOString().split('T')[0];
+      if (newDate < todayDateStr4) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
       if (newStart >= newEnd) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
 
       const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
@@ -591,6 +593,9 @@
       const errEl = document.getElementById('slotError');
 
       if (!title || !date || !start || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+      if (!title || !date || !start || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
+      const todayDateStr = new Date().toISOString().split('T')[0];
+      if (date < todayDateStr) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
       if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
       if (start >= end) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
       if (start < '05:00') { errEl.style.display='block'; errEl.textContent='Start time must be after 5:00 AM.'; return; }
@@ -718,6 +723,7 @@ let isListening = false;
       const pending = await supabaseFetch('booking_requests?status=eq.pending');
 
       const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. 12:00 PM to 1:00 PM is a lunch break - never book, reschedule, or suggest any slot during this time. if the owner asks for a slot overlapping 12:00-13:00, tell them that time is blocked for lunch and ask for a different time.
+      Never book or reschedule any slot to a date before today (${todayStr}). If the owner asks for a past date, tell them that date has expired and ask for today or a future date.
 
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
 Pending booking requests: ${JSON.stringify(pending)}
@@ -778,7 +784,13 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
             if (newStart < '13:00' && newEnd > '12:00') {
               container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, 12:00 PM to 1:00 PM is lunch break. No bookings allowed in this slot.</div></div>`;
               container.scrollTop = container.scrollHeight;
-              const cleanReplySkip = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
+              isVoiceMessage = false;
+              return;
+            }
+            const todayDateStr2 = new Date().toISOString().split('T')[0];
+            if (match[2] < todayDateStr2) {
+              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that date has already passed. Please choose today or a future date.</div></div>`;
+              container.scrollTop = container.scrollHeight;
               isVoiceMessage = false;
               return;
             }
@@ -802,6 +814,13 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           if (match) {
             const newStart = normalizeTime(match[3]);
             const newEnd = normalizeTime(match[4]);
+            const todayDateStr3 = new Date().toISOString().split('T')[0];
+            if (match[2] < todayDateStr3) {
+              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that date has already passed. Please choose today or a future date.</div></div>`;
+              container.scrollTop = container.scrollHeight;
+              isVoiceMessage = false;
+              return;
+            }
             await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
               date: match[2], start_time: newStart, end_time: newEnd, status: 'rescheduled'
             });

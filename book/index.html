@@ -280,8 +280,9 @@
       if (!/\S+@\S+\.\S+/.test(email)) { errEl.style.display='block'; errEl.textContent='Please enter a valid email.'; return; }
       if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
       if (end <= start) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
-      if (end <= start) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
       if (start < '13:00' && end > '12:00') { errEl.style.display='block'; errEl.textContent='12:00 PM to 1:00 PM is lunch break. Please choose another time.'; return; }
+      const todayDateStrV = new Date().toISOString().split('T')[0];
+      if (date < todayDateStrV) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
 
       const existing = await supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled');
       const overlap = existing.find(s => !(end <= s.start_time || start >= s.end_time));
@@ -320,6 +321,8 @@
     async function executeChatBooking(details) {
       try {
         if (details.start < '13:00' && details.end > '12:00') return '❌ Sorry, 12:00 PM to 1:00 PM is lunch break. Please choose another time.';
+        const todayDateStrV2 = new Date().toISOString().split('T')[0];
+        if (details.date < todayDateStrV2) return '❌ Sorry, that date has already expired. Please choose today or a future date.';
         const existing = await supabaseFetch('schedules?date=eq.' + details.date + '&status=neq.cancelled');
         const overlap = existing.find(s => !(details.end <= s.start_time || details.start >= s.end_time));
         if (overlap) return '❌ Sorry, that time is no longer available. Please choose another slot.';
