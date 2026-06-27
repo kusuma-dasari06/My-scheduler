@@ -734,14 +734,14 @@ You can have a normal friendly conversation (greetings, small talk) and also hel
 When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a description of minimum 25 words explaining the purpose of the meeting. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
 [ACTION:BOOK:title:date:HH:MM:HH:MM:Description]
 
-When the owner wants to cancel a slot, identify the correct slot id from the schedule data above, confirm with the owner, then once confirmed reply with EXACTLY:
-[ACTION:CANCEL:slot_id]
+When the owner wants to cancel a slot, identify the correct slot id from the schedule data above, ask the owner for a reason for cancellation, confirm with the owner, then once confirmed reply with EXACTLY:
+[ACTION:CANCEL:slot_id:reason]
 
 When the owner wants to edit a slot's title, identify the slot id, confirm the new title with the owner, then once confirmed reply with EXACTLY:
 [ACTION:EDIT:slot_id:new_title]
 
-When the owner wants to reschedule a slot, identify the slot id, confirm the new date and time with the owner, then once confirmed reply with EXACTLY this with times in strict 24-hour HH:MM format:
-[ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM]
+When the owner wants to reschedule a slot, identify the slot id, ask the owner for a reason for rescheduling, confirm the new date, time, and reason with the owner, then once confirmed reply with EXACTLY this with times in strict 24-hour HH:MM format:
+[ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM:reason]
 
 When the owner wants to mark a slot as completed/done, identify the slot id, ask for at least 5 minutes of meeting points, then reply with EXACTLY:
 [ACTION:COMPLETE:slot_id:point1|point2|point3|point4|point5]
@@ -766,13 +766,14 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
         const reply = data.reply || 'Sorry, I could not process that.';
         chatHistory.push({ role: 'model', parts: [{ text: reply }] });
 
-        if (reply.includes('[ACTION:CANCEL:')) {
-          const match = reply.match(/\[ACTION:CANCEL:([^\]]+)\]/);
-          if (match) {
-            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'cancelled', cancel_reason: 'Cancelled via AI assistant' });
-            reloadSlots(); loadStatusCounts();
-          }
-        }
+        ply.includes('[ACTION:CANCEL:')) {
+         if (reply.includes('[ACTION:CANCEL:')) {
+  const match = reply.match(/\[ACTION:CANCEL:([^:]+):([^\]]+)\]/);
+  if (match) {
+    await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'cancelled', cancel_reason: match[2] });
+    reloadSlots(); loadStatusCounts();
+  }
+}
         if (reply.includes('[ACTION:BOOK:')) {
           const match = reply.match(/\[ACTION:BOOK:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*):([^\]]*)\]/);
           if (match) {
@@ -808,23 +809,23 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           }
         }
         if (reply.includes('[ACTION:RESCHEDULE:')) {
-          const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*)\]/);
-          if (match) {
-            const newStart = normalizeTime(match[3]);
-            const newEnd = normalizeTime(match[4]);
-            const todayDateStr3 = new Date().toISOString().split('T')[0];
-            if (match[2] < todayDateStr3) {
-              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that date has already passed. Please choose today or a future date.</div></div>`;
-              container.scrollTop = container.scrollHeight;
-              isVoiceMessage = false;
-              return;
-            }
-            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
-              date: match[2], start_time: newStart, end_time: newEnd, status: 'rescheduled'
-            });
-            reloadSlots(); loadStatusCounts();
-          }
-        }
+  const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*):([^\]]*)\]/);
+  if (match) {
+    const newStart = normalizeTime(match[3]);
+    const newEnd = normalizeTime(match[4]);
+    const todayDateStr3 = new Date().toISOString().split('T')[0];
+    if (match[2] < todayDateStr3) {
+      container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that date has already passed. Please choose today or a future date.</div></div>`;
+      container.scrollTop = container.scrollHeight;
+      isVoiceMessage = false;
+      return;
+    }
+    await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
+      date: match[2], start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: match[5] || 'Rescheduled via AI assistant'
+    });
+    reloadSlots(); loadStatusCounts();
+  }
+}
         if (reply.includes('[ACTION:COMPLETE:')) {
           const match = reply.match(/\[ACTION:COMPLETE:([^:]+):([^\]]+)\]/);
           if (match) {
