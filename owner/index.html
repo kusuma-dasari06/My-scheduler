@@ -720,8 +720,8 @@ let isListening = false;
       const slots = await supabaseFetch('schedules?status=neq.cancelled&order=date,start_time');
       const pending = await supabaseFetch('booking_requests?status=eq.pending');
 
-      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. 12:00 PM to 1:00 PM is a lunch break - never book, reschedule, or suggest any slot during this time. if the owner asks for a slot overlapping 12:00-13:00, tell them that time is blocked for lunch and ask for a different time.
-      Never book or reschedule any slot to a date before today (${todayStr}). If the owner asks for a past date, tell them that date has expired and ask for today or a future date.
+      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. 12:00 PM to 1:00 PM is a lunch break. Only mention this if the owner specifically tries to book, reschedule, or ask about a slot that overlaps 12:00-13:00 — do not mention lunch break in unrelated replies.
+      Never book or reschedule any slot to a date before today (${todayStr}). Only mention this if the owner specifically tries to use a past date — do not mention it in unrelated replies.
 
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
 Pending booking requests: ${JSON.stringify(pending)}
@@ -730,6 +730,7 @@ LANGUAGE RULE: Always reply in the same language the owner used in their message
 
 You can have a normal friendly conversation (greetings, small talk) and also help manage the schedule. Reply in plain text only, no stars, no markdown formatting. Keep replies short and directly answer only what was asked.
 
+When speaking to the owner, never read out internal slot IDs, request IDs, or raw database identifiers in your reply — refer to meetings naturally by title, date, and time instead (e.g. "your meeting with Sravani at 5 PM" not "slot ID abc123"). Keep confirmations conversational and natural, as if speaking out loud.
 
 When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a description of minimum 25 words explaining the purpose of the meeting. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
 [ACTION:BOOK:title:date:HH:MM:HH:MM:Description]
