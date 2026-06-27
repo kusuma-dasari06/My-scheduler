@@ -70,6 +70,36 @@
   </style>
 </head>
 <body>
+  <!-- Auth Screen -->
+<div id="authScreen" style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0F172A;">
+  <div style="background:#1E2938;border:1px solid #334155;border-radius:12px;padding:32px;width:400px;">
+    <h2 style="color:#6366F1;margin-bottom:8px;text-align:center">MyScheduler</h2>
+    <p style="color:#94A3B8;font-size:13px;text-align:center;margin-bottom:24px">Sign in to book a meeting</p>
+
+    <div style="display:flex;gap:8px;margin-bottom:24px;">
+      <button id="loginTab" onclick="switchTab('login')" style="flex:1;padding:8px;background:#6366F1;color:white;border:none;border-radius:8px;cursor:pointer;">Login</button>
+      <button id="registerTab" onclick="switchTab('register')" style="flex:1;padding:8px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;">Register</button>
+    </div>
+
+    <div id="authError" style="display:none;color:#EF4444;margin-bottom:12px;"></div>
+    <div id="authSuccess" style="display:none;color:#22C55E;margin-bottom:12px;"></div>
+
+    <div id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;"><br>
+      <input type="password" id="loginPassword" placeholder="Password" style="width:100%;padding:10px;margin-bottom:15px;"><br>
+      <button onclick="handleLogin()" style="width:100%;padding:10px;background:#6366F1;color:white;border:none;border-radius:6px;">Login</button>
+    </div>
+
+    <div id="registerForm" style="display:none;">
+      <input type="text" id="regName" placeholder="Full Name" style="width:100%;padding:10px;margin-bottom:10px;"><br>
+      <input type="email" id="regEmail" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;"><br>
+      <input type="text" id="regDesignation" placeholder="Designation" style="width:100%;padding:10px;margin-bottom:10px;"><br>
+      <input type="password" id="regPassword" placeholder="Password" style="width:100%;padding:10px;margin-bottom:15px;"><br>
+      <button onclick="handleRegister()" style="width:100%;padding:10px;background:#6366F1;color:white;border:none;border-radius:6px;">Register</button>
+    </div>
+  </div>
+</div>
+<div id="mainApp" style="display:none;">
   <div class="header">
     <h1>MyScheduler</h1>
     <p>Select a date and time to request a meeting</p>
@@ -115,15 +145,15 @@
       <div class="success-msg" id="bookingSuccess"></div>
       <div class="form-group">
         <label>Your Name *</label>
-        <input type="text" id="visitorName" placeholder="Enter your name" />
+        <input type="text" id="visitorName" placeholder="Enter your name" readonly style="opacity:0.7;" />
       </div>
       <div class="form-group">
         <label>Your Email *</label>
-        <input type="email" id="visitorEmail" placeholder="Enter your email" />
+        <input type="email" id="visitorEmail" placeholder="Enter your email" readonly style="opacity:0.7;" />
       </div>
       <div class="form-group">
   <label>Your Designation/Role *</label>
-  <input type="text" id="visitorDesignation" placeholder="e.g. Manager, Student, Client" />
+  <input type="text" id="visitorDesignation" placeholder="e.g. Manager, Student, Client" readonly style="opacity:0.7" />
 </div>
       <div class="form-group">
         <label>Date</label>
@@ -151,6 +181,115 @@
 
   <script>
     emailjs.init('o0EwTVp7WtONi-e8k');
+    let loggedInVisitor = null;
+
+function switchTab(tab) {
+  if (tab === 'login') {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('loginTab').style.background = '#6366F1';
+    document.getElementById('registerTab').style.background = '#334155';
+  } else {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('loginTab').style.background = '#334155';
+    document.getElementById('registerTab').style.background = '#6366F1';
+  }
+
+  document.getElementById('authError').style.display = 'none';
+  document.getElementById('authSuccess').style.display = 'none';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const errEl = document.getElementById('authError');
+
+  if (!email || !password) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Please fill all fields.';
+    return;
+  }
+
+  const data = await supabaseFetch(
+    'visitors?email=eq.' +
+    encodeURIComponent(email) +
+    '&password=eq.' +
+    encodeURIComponent(password)
+  );
+
+  if (!data.length) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Invalid email or password.';
+    return;
+  }
+
+  loggedInVisitor = data[0];
+  showMainApp();
+}
+async function handleRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const designation = document.getElementById('regDesignation').value.trim();
+  const password = document.getElementById('regPassword').value.trim();
+
+  const errEl = document.getElementById('authError');
+  const successEl = document.getElementById('authSuccess');
+
+  errEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  if (!name || !email || !designation || !password) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Please fill all fields.';
+    return;
+  }
+
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Please enter a valid email.';
+    return;
+  }
+
+  const existing = await supabaseFetch(
+    'visitors?email=eq.' + encodeURIComponent(email)
+  );
+
+  if (existing.length) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Email already registered. Please login.';
+    return;
+  }
+
+  await supabaseFetch('visitors', 'POST', {
+    name,
+    email,
+    designation,
+    password
+  });
+
+  successEl.style.display = 'block';
+  successEl.textContent = 'Registration successful! Please login.';
+  switchTab('login');
+}
+
+function showMainApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+
+  if (loggedInVisitor) {
+    document.getElementById('visitorName').value = loggedInVisitor.name;
+    document.getElementById('visitorEmail').value = loggedInVisitor.email;
+    document.getElementById('visitorDesignation').value = loggedInVisitor.designation;
+
+    const pastEmail = document.getElementById('pastEmail');
+    if (pastEmail) {
+      pastEmail.value = loggedInVisitor.email;
+    }
+  }
+
+  renderCalendar();
+}
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
 
@@ -245,9 +384,11 @@
       document.getElementById('bookingDate').value = date;
       document.getElementById('bookingStart').value = startTime.slice(0,5);
       document.getElementById('bookingEnd').value = endTime.slice(0,5);
-      document.getElementById('visitorName').value = '';
-      document.getElementById('visitorEmail').value = '';
-      document.getElementById('visitorDesignation').value = '';
+      if (loggedInVisitor) {
+  document.getElementById('visitorName').value = loggedInVisitor.name;
+  document.getElementById('visitorEmail').value = loggedInVisitor.email;
+  document.getElementById('visitorDesignation').value = loggedInVisitor.designation;
+}
       document.getElementById('bookingDesc').value = '';
       document.getElementById('bookingWordCount').textContent = '0 / 25 words minimum';
       document.getElementById('bookingError').style.display = 'none';
@@ -409,7 +550,7 @@ RULES:
       }
     }
 
-    renderCalendar();
   </script>
+  </div>
 </body>
 </html>
