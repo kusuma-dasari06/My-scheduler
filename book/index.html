@@ -542,20 +542,30 @@ const filteredSlots = slots.filter(s => {
 });
       const bookedTimes = filteredSlots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
 
-      const systemPrompt = `You are MyScheduler AI assistant for visitors. Today is ${dateStr} IST. Working hours: 5AM to 11PM IST. Booked times on selected date: ${JSON.stringify(bookedTimes)}.
+      // Available slots calculate cheyyi
+const allSlots = [];
+for (let h = 5; h < 23; h++) {
+  const start = String(h).padStart(2,'0') + ':00';
+  const end = String(h+1).padStart(2,'0') + ':00';
+  const isLunch = (h === 12);
+  const isBooked = isLunch || filteredSlots.some(s => 
+    s.start_time.slice(0,5) <= start && s.end_time.slice(0,5) > start
+  );
+  if (!isBooked) allSlots.push(`${start} - ${end}`);
+}
 
+const systemPrompt = `You are MyScheduler AI assistant. Today is ${dateStr} IST.
+Working hours: 5AM to 11PM. Lunch break: 12PM-1PM (always blocked).
+Available slots today: ${allSlots.length ? allSlots.join(', ') : 'No slots available'}.
 
-RULES:
-- If a time exists in booked times list, always say it is booked. Do not say it is available.
-- Do not assume all other times are available unless they are within working hours and not in booked times.
-- NEVER reveal meeting titles, descriptions, or visitor names
-- Only tell available or booked status
-- If visitor wants to book, do not ask for name, email, or designation.
-- The logged-in visitor details are already available.
-- Ask only for date, start time, end time, and reason (minimum 25 words).
-- After collecting all details, confirm with visitor once
-- Then reply EXACTLY like this on a single line:
-- Keep replies short and concise, 1-2 sentences maximum. No long explanations.
+STRICT RULES:
+- Reply in MAX 2 sentences. No exceptions.
+- If user asks available slots, list ONLY the available slots above. Nothing else.
+- If user asks unavailable/booked slots, say which ones are NOT in the available list.
+- NEVER ask for name, email, or designation — those are already known from login.
+- ONLY ask for details (date, start time, end time, reason min 25 words) when user EXPLICITLY says they want to book.
+- Do not ask booking details for any other question.
+- After collecting booking details, confirm once then reply EXACTLY:
 [BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
