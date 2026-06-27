@@ -544,7 +544,10 @@ const filteredSlots = slots.filter(s => {
 
       const systemPrompt = `You are MyScheduler AI assistant for visitors. Today is ${dateStr} IST. Working hours: 5AM to 11PM IST. Booked times on selected date: ${JSON.stringify(bookedTimes)}.
 
+
 RULES:
+- If a time exists in booked times list, always say it is booked. Do not say it is available.
+- Do not assume all other times are available unless they are within working hours and not in booked times.
 - NEVER reveal meeting titles, descriptions, or visitor names
 - Only tell available or booked status
 - If visitor wants to book, do not ask for name, email, or designation.
