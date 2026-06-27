@@ -749,6 +749,12 @@ When the owner wants to mark a slot as completed/done, identify the slot id, ask
 When the owner wants to accept a pending booking request, identify the request id from the pending booking requests list above, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:ACCEPT_REQUEST:request_id]
 
+When the owner wants to reschedule (ask the visitor to pick a new time for) a pending booking request, identify the request id, ask the owner for the reschedule reason/remarks, confirm with the owner, then once confirmed reply with EXACTLY:
+[ACTION:RESCHEDULE_REQUEST:request_id:remarks]
+
+When the owner wants to decline a pending booking request, identify the request id, ask the owner for the decline reason, confirm with the owner, then once confirmed reply with EXACTLY:
+[ACTION:DECLINE_REQUEST:request_id:remarks]
+
 CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Never take an action without the owner's explicit confirmation.`;
 
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
@@ -835,29 +841,42 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
             reloadSlots(); loadStatusCounts();
           }
         }
-        if (reply.includes('[ACTION:ACCEPT_REQUEST:')) {
-  const match = reply.match(/\[ACTION:ACCEPT_REQUEST:([^\]]+)\]/);
-  if (match) {
-    const reqData = await supabaseFetch('booking_requests?id=eq.' + match[1]);
-    if (reqData[0]) {
-      const r = reqData[0];
-      await supabaseFetch('booking_requests?id=eq.' + r.id, 'PATCH', { status: 'accepted' });
-      await supabaseFetch('schedules', 'POST', {
-        title: 'Meeting with ' + r.visitor_name,
-        date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
-        description: (r.description || 'No reason provided') + ' (Booked by Visitor - ' + r.visitor_name + ')',
-        category: 'Meeting', status: 'upcoming', created_by: 'visitor',
-        visitor_name: r.visitor_name, visitor_email: r.visitor_email
-      });
-      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
-        visitor_name: r.visitor_name, visitor_email: r.visitor_email,
-        requested_date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
-        description: 'Your meeting request has been accepted!'
-      });
-      loadRequests(); loadPendingCount(); reloadSlots();
-    }
-  }
-}
+        if (reply.includes('[ACTION:RESCHEDULE_REQUEST:')) {
+          const match = reply.match(/\[ACTION:RESCHEDULE_REQUEST:([^:]+):([^\]]+)\]/);
+          if (match) {
+            const reqId = match[1];
+            const remarks = match[2];
+            const reqData = await supabaseFetch('booking_requests?id=eq.' + reqId);
+            await supabaseFetch('booking_requests?id=eq.' + reqId, 'PATCH', { status: 'reschedule_requested', owner_remarks: remarks });
+            if (reqData[0]) {
+              const r = reqData[0];
+              emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+                visitor_name: r.visitor_name || 'Visitor', visitor_email: r.visitor_email,
+                requested_date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
+                description: 'Reschedule requested: ' + remarks
+              });
+            }
+            loadRequests(); loadPendingCount();
+          }
+        }
+        if (reply.includes('[ACTION:DECLINE_REQUEST:')) {
+          const match = reply.match(/\[ACTION:DECLINE_REQUEST:([^:]+):([^\]]+)\]/);
+          if (match) {
+            const reqId = match[1];
+            const remarks = match[2];
+            const reqData = await supabaseFetch('booking_requests?id=eq.' + reqId);
+            await supabaseFetch('booking_requests?id=eq.' + reqId, 'PATCH', { status: 'declined', owner_remarks: remarks });
+            if (reqData[0]) {
+              const r = reqData[0];
+              emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+                visitor_name: r.visitor_name || 'Visitor', visitor_email: r.visitor_email,
+                requested_date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
+                description: 'Request declined. Reason: ' + remarks
+              });
+            }
+            loadRequests(); loadPendingCount();
+          }
+        }
 
         let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
         if (!cleanReply) cleanReply = 'Done! Your request has been processed.';
@@ -974,14 +993,14 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
         await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'reschedule_requested', owner_remarks: remarks });
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
           visitor_name: currentRemarkName || 'Visitor', visitor_email: currentRemarkEmail,
-          requested_date: '', start_time: '', end_time: '',
+          requested_date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
           description: 'Reschedule requested: ' + remarks
         });
       } else if (currentRemarkAction === 'decline') {
         await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'declined', owner_remarks: remarks });
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
           visitor_name: currentRemarkName || 'Visitor', visitor_email: currentRemarkEmail,
-          requested_date: '', start_time: '', end_time: '',
+          requested_date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
           description: 'Request declined. Reason: ' + remarks
         });
       }
