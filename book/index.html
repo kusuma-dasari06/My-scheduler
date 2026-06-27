@@ -226,9 +226,11 @@
       for (let h = 5; h < 23; h++) {
         const startStr = String(h).padStart(2,'0') + ':00:00';
         const endStr = String(h+1).padStart(2,'0') + ':00:00';
-        const isBooked = bookedSlots.some(s => s.start_time < endStr && s.end_time > startStr);
+        const isLunch = (startStr < '13:00:00' && endStr > '12:00:00');
+        const isBooked = isLunch || bookedSlots.some(s => s.start_time < endStr && s.end_time > startStr);
         if (isBooked) {
-          html += `<div class="time-slot booked">🔒 Booked: ${startStr.slice(0,5)} — ${endStr.slice(0,5)}</div>`;
+          const label = isLunch ? '🍽️ Lunch Break' : '🔒 Booked';
+          html += `<div class="time-slot booked">${label}: ${startStr.slice(0,5)} — ${endStr.slice(0,5)}</div>`;
         } else {
           hasAvailable = true;
           html += `<div class="time-slot available" onclick="openBookingModal('${dateStr}', '${startStr}', '${endStr}')">✅ ${startStr.slice(0,5)} — ${endStr.slice(0,5)} Available</div>`;
@@ -278,6 +280,8 @@
       if (!/\S+@\S+\.\S+/.test(email)) { errEl.style.display='block'; errEl.textContent='Please enter a valid email.'; return; }
       if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
       if (end <= start) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+      if (end <= start) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
+      if (start < '13:00' && end > '12:00') { errEl.style.display='block'; errEl.textContent='12:00 PM to 1:00 PM is lunch break. Please choose another time.'; return; }
 
       const existing = await supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled');
       const overlap = existing.find(s => !(end <= s.start_time || start >= s.end_time));
@@ -315,6 +319,7 @@
 
     async function executeChatBooking(details) {
       try {
+        if (details.start < '13:00' && details.end > '12:00') return '❌ Sorry, 12:00 PM to 1:00 PM is lunch break. Please choose another time.';
         const existing = await supabaseFetch('schedules?date=eq.' + details.date + '&status=neq.cancelled');
         const overlap = existing.find(s => !(details.end <= s.start_time || details.start >= s.end_time));
         if (overlap) return '❌ Sorry, that time is no longer available. Please choose another slot.';
