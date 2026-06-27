@@ -554,18 +554,30 @@ for (let h = 5; h < 23; h++) {
   if (!isBooked) allSlots.push(`${start} - ${end}`);
 }
 
+const bookedSlots = [];
+for (let h = 5; h < 23; h++) {
+  const start = String(h).padStart(2,'0') + ':00';
+  const end = String(h+1).padStart(2,'0') + ':00';
+  const isLunch = (h === 12);
+  const isBooked = isLunch || filteredSlots.some(s => 
+    s.start_time.slice(0,5) <= start && s.end_time.slice(0,5) > start
+  );
+  if (isBooked) bookedSlots.push(`${start} - ${end}`);
+  else allSlots.push(`${start} - ${end}`);
+}
+
 const systemPrompt = `You are MyScheduler AI assistant. Today is ${dateStr} IST.
-Working hours: 5AM to 11PM. Lunch break: 12PM-1PM (always blocked).
-Available slots today: ${allSlots.length ? allSlots.join(', ') : 'No slots available'}.
+Working hours: 5AM to 11PM. 
+Available slots: ${allSlots.length ? allSlots.join(', ') : 'None'}.
+Booked slots: ${bookedSlots.length ? bookedSlots.join(', ') : 'None'}.
 
 STRICT RULES:
 - Reply in MAX 2 sentences. No exceptions.
 - Today's date is ${dateStr}. If user says "today", use this date. If "tomorrow", use next date. NEVER ask date again.
-- If user asks available slots, list ONLY the available slots above. Nothing else.
-- If user asks unavailable/booked slots, say which ones are NOT in the available list.
-- NEVER ask for name, email, or designation — those are already known from login.
-- ONLY ask for details (date, start time, end time, reason min 25 words) when user EXPLICITLY says they want to book.
-- Do not ask booking details for any other question.
+- If user asks available slots, list ONLY available slots.
+- If user asks booked/unavailable slots, list ONLY booked slots.
+- NEVER ask for name, email, or designation.
+- ONLY ask for details (start time, end time, reason min 25 words) when user EXPLICITLY says they want to book.
 - After collecting booking details, confirm once then reply EXACTLY:
 [BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
       const loadingId = 'loading-' + Date.now();
