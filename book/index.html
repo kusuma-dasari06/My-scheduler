@@ -480,6 +480,11 @@ function logout() {
 
     async function executeChatBooking(details) {
       try {
+        if (loggedInVisitor) {
+  details.name = loggedInVisitor.name;
+  details.email = loggedInVisitor.email;
+  details.designation = loggedInVisitor.designation;
+}
         if (details.start < '13:00' && details.end > '12:00') return '❌ Sorry, 12:00 PM to 1:00 PM is lunch break. Please choose another time.';
         const todayDateStrV2 = new Date().toISOString().split('T')[0];
         if (details.date < todayDateStrV2) return '❌ Sorry, that date has already expired. Please choose today or a future date.';
@@ -525,12 +530,13 @@ function logout() {
 RULES:
 - NEVER reveal meeting titles, descriptions, or visitor names
 - Only tell available or booked status
-- If visitor wants to book, collect details one by one: 1) name, 2) email, 3) date, 4) start time, 5) end time, 6) reason (minimum 25 words)
+- If visitor wants to book, do not ask for name, email, or designation.
+- The logged-in visitor details are already available.
+- Ask only for date, start time, end time, and reason (minimum 25 words).
 - After collecting all details, confirm with visitor once
 - Then reply EXACTLY like this on a single line:
 - Keep replies short and concise, 1-2 sentences maximum. No long explanations.
-[BOOK] name=VALUE | email=VALUE | date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
-
+[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
       container.scrollTop = container.scrollHeight;
