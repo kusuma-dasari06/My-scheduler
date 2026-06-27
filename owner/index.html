@@ -766,7 +766,7 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
         const reply = data.reply || 'Sorry, I could not process that.';
         chatHistory.push({ role: 'model', parts: [{ text: reply }] });
 
-        ply.includes('[ACTION:CANCEL:')) {
+        ply.includes('[ACTION:CANCEL:') {
          if (reply.includes('[ACTION:CANCEL:')) {
   const match = reply.match(/\[ACTION:CANCEL:([^:]+):([^\]]+)\]/);
   if (match) {
