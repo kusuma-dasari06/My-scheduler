@@ -331,7 +331,7 @@ loggedInVisitor.name.charAt(0).toUpperCase();
     }
   }
 
-  renderCalendar();
+  renderCalendar().catch(console.error);
 }
 function logout() {
   localStorage.removeItem('loggedInVisitor');
@@ -428,13 +428,13 @@ function toggleProfile() {
   }
 }
 
-    function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); renderCalendar(); }
+    function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); renderCalendar().catch(console.error); }
 
     async function selectDate(year, month, day) {
       selectedDate = new Date(year, month, day);
       document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
       document.getElementById('timesContainer').innerHTML = '<p style="color:#94A3B8">Loading availability...</p>';
-      renderCalendar();
+      renderCalendar().catch(console.error);
       const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const [scheduleSlots, bookingSlots] = await Promise.all([
   supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled'),
