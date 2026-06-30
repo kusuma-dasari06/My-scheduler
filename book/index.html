@@ -514,10 +514,11 @@ function getAvailableSlots(bookedSlots) {
   supabaseFetch('booking_requests?requested_date=eq.' + date + '&status=neq.declined')
 ]);
 const allExisting = [...existingSchedules, ...existingBookings.map(b => ({
-  start_time: b.start_time, end_time: b.end_time
+  start_time: b.start_time.length === 5 ? b.start_time + ':00' : b.start_time,
+  end_time: b.end_time.length === 5 ? b.end_time + ':00' : b.end_time
 }))];
-const overlap = allExisting.find(s => !(end <= s.start_time || start >= s.end_time));
-if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no longer available, please choose another slot.'; return; }
+const overlap = allExisting.find(s => !(details.end + ':00' <= s.start_time || details.start + ':00' >= s.end_time));
+if (overlap) return '❌ Sorry, that time is already booked. Please choose another slot.';
 
       errEl.style.display = 'none';
       await supabaseFetch('booking_requests', 'POST', {
