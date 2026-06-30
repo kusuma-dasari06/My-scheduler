@@ -101,9 +101,23 @@
 </div>
 <div id="mainApp" style="display:none;">
   <div style="position:fixed;top:15px;right:20px;z-index:9999;">
-  <button onclick="toggleProfile()" style="padding:10px 16px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;">
-    👤 Profile
-  </button>
+  <button id="profileAvatar" onclick="toggleProfile()" style="
+width:44px;
+height:44px;
+border-radius:50%;
+border:none;
+background:#FFFFFF;
+color:#111827;
+font-size:18px;
+font-weight:bold;
+cursor:pointer;
+display:flex;
+align-items:center;
+justify-content:center;
+box-shadow:0 4px 10px rgba(0,0,0,0.25);
+">
+K
+</button>
 
   <div id="profileCard" style="display:none;position:absolute;right:0;top:48px;width:260px;background:#1E2938;border:1px solid #334155;border-radius:12px;padding:16px;z-index:1000;">
     <div style="font-size:18px;margin-bottom:10px;">👤 <span id="profileName"></span></div>
@@ -302,6 +316,8 @@ function showMainApp() {
     document.getElementById('profileName').textContent = loggedInVisitor.name;
 document.getElementById('profileEmail').textContent = loggedInVisitor.email;
 document.getElementById('profileDesignation').textContent = loggedInVisitor.designation;
+document.getElementById('profileAvatar').textContent =
+loggedInVisitor.name.charAt(0).toUpperCase();
 
     const pastEmail = document.getElementById('pastEmail');
     if (pastEmail) {
