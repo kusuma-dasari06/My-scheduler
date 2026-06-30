@@ -368,7 +368,7 @@
         <div class="slot-card ${s.status}">
           <div class="slot-title-row">
             <div class="slot-title">${s.title}</div>
-            <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Reason</button>
+            <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Agenda</button>
           </div>
           <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(s.description) || 'No reason provided.'}</div>
           <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${s.minutes_of_meeting ? escapeHtml(s.minutes_of_meeting).replace(/\|/g, '\n') : 'No minutes recorded.'}</div>
