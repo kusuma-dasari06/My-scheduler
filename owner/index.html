@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <title>MyScheduler - Owner</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -116,12 +117,14 @@
       <div class="chat-input">
         <input type="text" id="chatInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter') sendMessage()" />
         <button id="micBtn" onclick="toggleVoiceInput()" style="background:#334155;color:#F1F5F9;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:16px;">🎤</button>
+        <button id="micBtn" onclick="toggleVoiceInput()" style="background:#334155;color:#F1F5F9;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:16px;"><i class="fas fa-microphone"></i></button>
         <button onclick="sendMessage()">Send</button>
       </div>
       </div>
     </div>
   </div>
 
+  <!-- MoM Modal -->
   <div class="modal-overlay" id="momModal">
     <div class="modal" style="width:450px">
       <h3>Minutes of Meeting</h3>
@@ -410,7 +413,7 @@
 
     function closeMomModal() { document.getElementById('momModal').classList.remove('active'); }
 
-        function updateMomCount() {
+    function updateMomCount() {
       const words = document.getElementById('momText').value.trim().split(/\s+/).filter(w => w.length > 0).length;
       const el = document.getElementById('momCount');
       el.textContent = words + ' / 30 words minimum';
@@ -644,10 +647,16 @@ let isListening = false;
         console.log('Speech recognition error:', event.error);
         isListening = false;
         document.getElementById('micBtn').style.background = '#334155';
+        const micBtn = document.getElementById('micBtn');
+        micBtn.style.background = '#334155';
+        micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       };
       rec.onend = function() {
         isListening = false;
         document.getElementById('micBtn').style.background = '#334155';
+        const micBtn = document.getElementById('micBtn');
+        micBtn.style.background = '#334155';
+        micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       };
       return rec;
     }
@@ -658,18 +667,22 @@ let isListening = false;
         if (recognition) recognition.stop();
         isListening = false;
         micBtn.style.background = '#334155';
+        micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
         return;
       }
       recognition = initRecognition('en-IN');
       if (!recognition) return;
       isListening = true;
       micBtn.style.background = '#6366F1';
+      micBtn.style.background = '#EF4444';
+      micBtn.innerHTML = '<i class="fas fa-stop"></i>';
       try {
         recognition.start();
       } catch (e) {
         console.log('Recognition start error:', e);
         isListening = false;
         micBtn.style.background = '#334155';
+        micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       }
     }
 
