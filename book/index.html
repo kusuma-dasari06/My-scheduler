@@ -100,12 +100,12 @@
   </div>
 </div>
 <div id="mainApp" style="display:none;">
-  <div style="position:relative;">
-  <button onclick="toggleProfile()" style="padding:8px 14px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;">
+  <div style="position:fixed;top:15px;right:20px;z-index:9999;">
+  <button onclick="toggleProfile()" style="padding:10px 16px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;">
     👤 Profile
   </button>
 
-  <div id="profileCard" style="display:none;position:absolute;right:0;top:45px;width:260px;background:#1E2938;border:1px solid #334155;border-radius:12px;padding:16px;z-index:1000;">
+  <div id="profileCard" style="display:none;position:absolute;right:0;top:48px;width:260px;background:#1E2938;border:1px solid #334155;border-radius:12px;padding:16px;z-index:1000;">
     <div style="font-size:18px;margin-bottom:10px;">👤 <span id="profileName"></span></div>
     <div style="margin-bottom:8px;">💼 <span id="profileDesignation"></span></div>
     <div style="margin-bottom:16px;">📧 <span id="profileEmail"></span></div>
@@ -115,7 +115,8 @@
     </button>
   </div>
 </div>
-  <div class="layout">
+  <div class="layout"
+    style="margin-top:60px;">
     <div class="panel">
       <h2>Select a Date</h2>
       <div class="calendar-header">
