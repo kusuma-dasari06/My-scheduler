@@ -164,7 +164,7 @@ transition:.2s;color:white;border:none;border-radius:8px;cursor:pointer;">
       </div>
       <div class="chat-input">
   <input type="text" id="chatInput" placeholder="Ask about availability..." onkeydown="if(event.key==='Enter') sendMessage()" />
-  <button id="voiceBtn" onclick="startVoice()" style="padding:10px 14px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;">🎤</button>
+  <button id="voiceBtn" onclick="startVoice()" style="padding:10px 14px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;"><i class="fas fa-microphone"></i></button>
   <button onclick="sendMessage()">Send</button>
 </div>
     </div>
@@ -560,7 +560,8 @@ if (overlap) return '❌ Sorry, that time is already booked. Please choose anoth
         if (details.start < '13:00' && details.end > '12:00') return '❌ Sorry, 12:00 PM to 1:00 PM is lunch break. Please choose another time.';
         const now = new Date();
         const currentDate = new Date(now.getTime() + (5.5 * 60 * 60 * 1000)).toISOString().split('T')[0];
-const currentTime = now.toTimeString().slice(0,5);
+const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+const currentTime = istNow.toUTCString().slice(17, 22);
 
 if (details.date === currentDate && details.start < currentTime) {
   return '❌ Sorry, this time has already passed. Please choose a future time slot.';
@@ -620,7 +621,8 @@ const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
   end_time: b.end_time
 }))];
       const now = new Date();
-const currentTime = now.toTimeString().slice(0,5);
+const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+const currentTime = istNow.toUTCString().slice(17, 22);
 
 const filteredSlots = slots.filter(s => {
   return !(dateStr === new Date(now.getTime() + (5.5 * 60 * 60 * 1000)).toISOString().split('T')[0] && s.start_time.slice(0,5) < currentTime);
