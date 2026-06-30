@@ -387,9 +387,12 @@ function toggleProfile() {
   let pastBookedDates = [];
   if (loggedInVisitor) {
     const monthStr = `${year}-${String(month+1).padStart(2,'0')}`;
-    const bookings = await supabaseFetch(
+    const nextMonth = month === 11 ? `${year+1}-01` : `${year}-${String(month+2).padStart(2,'0')}`;
+const bookings = await supabaseFetch(
   'booking_requests?visitor_email=eq.' + encodeURIComponent(loggedInVisitor.email) +
-  '&requested_date=gte.' + monthStr + '-01&requested_date=lte.' + monthStr + '-31&status=neq.declined'
+  '&requested_date=gte.' + monthStr + '-01' +
+  '&requested_date=lt.' + nextMonth + '-01' +
+  '&status=neq.declined'
 );
 pastBookedDates = Array.isArray(bookings) ? bookings.map(b => b.requested_date) : [];
 console.log('Past booked dates:',pastBookedDates);
