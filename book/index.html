@@ -388,10 +388,10 @@ function toggleProfile() {
   if (loggedInVisitor) {
     const monthStr = `${year}-${String(month+1).padStart(2,'0')}`;
     const bookings = await supabaseFetch(
-      'booking_requests?visitor_email=eq.' + encodeURIComponent(loggedInVisitor.email) +
-      '&requested_date=like.' + monthStr + '*&status=neq.declined'
-    );
-    pastBookedDates = bookings.map(b => b.requested_date);
+  'booking_requests?visitor_email=eq.' + encodeURIComponent(loggedInVisitor.email) +
+  '&requested_date=gte.' + monthStr + '-01&requested_date=lte.' + monthStr + '-31&status=neq.declined'
+);
+pastBookedDates = Array.isArray(bookings) ? bookings.map(b => b.requested_date) : [];
   }
 
   for (let i = 0; i < firstDay; i++) {
