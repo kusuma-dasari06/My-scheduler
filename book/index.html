@@ -413,7 +413,32 @@ const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
 }))];
       renderTimeline(slots, dateStr);
     }
+function getAvailableSlots(bookedSlots) {
+  const available = [];
 
+  for (let h = 5; h < 23; h++) {
+    const start = String(h).padStart(2, '0') + ':00:00';
+    const end = String(h + 1).padStart(2, '0') + ':00:00';
+
+    const isLunch = (h === 12);
+
+    const isBooked =
+      isLunch ||
+      bookedSlots.some(s =>
+        s.start_time < end &&
+        s.end_time > start
+      );
+
+    if (!isBooked) {
+      available.push({
+        start: start.slice(0, 5),
+        end: end.slice(0, 5)
+      });
+    }
+  }
+
+  return available;
+}
     function renderTimeline(bookedSlots, dateStr) {
       const container = document.getElementById('timesContainer');
       container.innerHTML = '';
@@ -588,51 +613,30 @@ const filteredSlots = slots.filter(s => {
       const bookedTimes = filteredSlots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
 
       // Available slots calculate cheyyi
-const allSlots = [];
+const availableSlots = getAvailableSlots(filteredSlots);
+
+const allSlots = availableSlots.map(slot =>
+  `${slot.start} - ${slot.end}`
+);
+
 const bookedSlots = [];
 
 for (let h = 5; h < 23; h++) {
-
-  const start = String(h).padStart(2,'0') + ':00';
-  const end = String(h + 1).padStart(2,'0') + ':00';
+  const start = String(h).padStart(2,'0') + ':00:00';
+  const end = String(h + 1).padStart(2,'0') + ':00:00';
 
   const isLunch = (h === 12);
 
   const isBooked =
-      isLunch ||
-      filteredSlots.some(s =>
-          s.start_time.slice(0,5) < end &&
-          s.end_time.slice(0,5) > start
-      );
+    isLunch ||
+    filteredSlots.some(s =>
+      s.start_time < end &&
+      s.end_time > start
+    );
 
   if (isBooked) {
-      bookedSlots.push(`${start} - ${end}`);
-  } else {
-      allSlots.push(`${start} - ${end}`);
+    bookedSlots.push(`${start.slice(0,5)} - ${end.slice(0,5)}`);
   }
-
-}
-
-
-const lowerMsg = msg.toLowerCase();
-
-if (
-  lowerMsg.includes("available") &&
-  lowerMsg.includes("slot")
-) {
-  container.innerHTML += `
-    <div class="message ai">
-      <div class="message-bubble">
-        ${
-          allSlots.length
-            ? "Available slots today:<br>" + allSlots.join("<br>")
-            : "No available slots today."
-        }
-      </div>
-    </div>
-  `;
-  container.scrollTop = container.scrollHeight;
-  return;
 }
 const systemPrompt = `You are MyScheduler AI assistant. Today is ${dateStr} IST.
 Working hours: 5AM to 11PM. 
