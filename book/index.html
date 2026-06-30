@@ -589,14 +589,28 @@ const filteredSlots = slots.filter(s => {
 
       // Available slots calculate cheyyi
 const allSlots = [];
+const bookedSlots = [];
+
 for (let h = 5; h < 23; h++) {
+
   const start = String(h).padStart(2,'0') + ':00';
-  const end = String(h+1).padStart(2,'0') + ':00';
+  const end = String(h + 1).padStart(2,'0') + ':00';
+
   const isLunch = (h === 12);
-  const isBooked = isLunch || filteredSlots.some(s => 
-    s.start_time.slice(0,5) <= start && s.end_time.slice(0,5) > start
-  );
-  if (!isBooked) allSlots.push(`${start} - ${end}`);
+
+  const isBooked =
+      isLunch ||
+      filteredSlots.some(s =>
+          s.start_time.slice(0,5) < end &&
+          s.end_time.slice(0,5) > start
+      );
+
+  if (isBooked) {
+      bookedSlots.push(`${start} - ${end}`);
+  } else {
+      allSlots.push(`${start} - ${end}`);
+  }
+
 }
 
 const bookedSlots = [];
