@@ -100,17 +100,20 @@
   </div>
 </div>
 <div id="mainApp" style="display:none;">
-  <div class="header" style="display:flex;justify-content:space-between;align-items:center;">
-  <div>
-    <h1>MyScheduler</h1>
-    <p>Select a date and time to request a meeting</p>
-  </div>
-
-  <button
-    onclick="logout()"
-    style="padding:8px 16px;background:#EF4444;color:white;border:none;border-radius:8px;cursor:pointer;">
-    Logout
+  <div style="position:relative;">
+  <button onclick="toggleProfile()" style="padding:8px 14px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;">
+    👤 Profile
   </button>
+
+  <div id="profileCard" style="display:none;position:absolute;right:0;top:45px;width:260px;background:#1E2938;border:1px solid #334155;border-radius:12px;padding:16px;z-index:1000;">
+    <div style="font-size:18px;margin-bottom:10px;">👤 <span id="profileName"></span></div>
+    <div style="margin-bottom:8px;">💼 <span id="profileDesignation"></span></div>
+    <div style="margin-bottom:16px;">📧 <span id="profileEmail"></span></div>
+
+    <button onclick="logout()" style="width:100%;padding:10px;background:#EF4444;color:white;border:none;border-radius:8px;cursor:pointer;">
+      Logout
+    </button>
+  </div>
 </div>
   <div class="layout">
     <div class="panel">
@@ -295,6 +298,9 @@ function showMainApp() {
     document.getElementById('visitorName').value = loggedInVisitor.name;
     document.getElementById('visitorEmail').value = loggedInVisitor.email;
     document.getElementById('visitorDesignation').value = loggedInVisitor.designation;
+    document.getElementById('profileName').textContent = loggedInVisitor.name;
+document.getElementById('profileEmail').textContent = loggedInVisitor.email;
+document.getElementById('profileDesignation').textContent = loggedInVisitor.designation;
 
     const pastEmail = document.getElementById('pastEmail');
     if (pastEmail) {
@@ -308,6 +314,10 @@ function logout() {
   localStorage.removeItem('loggedInVisitor');
   loggedInVisitor = null;
   location.reload();
+}
+function toggleProfile() {
+  const card = document.getElementById('profileCard');
+  card.style.display = card.style.display === 'block' ? 'none' : 'block';
 }
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
