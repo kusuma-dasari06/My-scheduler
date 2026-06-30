@@ -414,6 +414,7 @@ pastBookedDates = Array.isArray(bookings) ? bookings.map(b => b.requested_date) 
     } else if (isPast && hasBooking) {
       el.style.color = '#F59E0B';
       el.style.cursor = 'pointer';
+      el.style.pointerEvents = 'auto';
       el.title = 'You have a booking on this date';
     }
 
