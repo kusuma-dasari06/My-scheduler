@@ -697,7 +697,7 @@ STRICT RULES:
 - ONLY ask for details (start time, end time, reason min 25 words) when user EXPLICITLY says they want to book.
 - After collecting booking details, ask: "Would you like to confirm this meeting with Ayyappa?"
 - After user confirms, reply EXACTLY:
-[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE
+[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
       container.scrollTop = container.scrollHeight;
