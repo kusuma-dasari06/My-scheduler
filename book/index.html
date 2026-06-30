@@ -160,7 +160,7 @@ transition:.2s;color:white;border:none;border-radius:8px;cursor:pointer;">
     <div class="panel">
       <h2>AI Assistant</h2>
       <div class="chat-messages" id="chatMessages">
-        <div class="message ai"><div class="message-bubble">Hi! I can help you check availability and book a meeting. What date works for you?</div></div>
+        <div class="message ai"><div class="message-bubble">Hi! I can help you schedule a meeting with Ayyappa. Would you like to check availability or book a meeting?</div></div>
       </div>
       <div class="chat-input">
   <input type="text" id="chatInput" placeholder="Ask about availability..." onkeydown="if(event.key==='Enter') sendMessage()" />
@@ -681,6 +681,7 @@ for (let h = 5; h < 23; h++) {
   }
 }
 const systemPrompt = `You are MyScheduler AI assistant. Today is ${dateStr} IST.
+The meeting owner is Ayyappa. Mention Ayyappa's name naturally in the beginning and final confirmation messages.
 Working hours: 5AM to 11PM. 
 Available slots: ${allSlots.length ? allSlots.join(', ') : 'None'}.
 Booked slots: ${bookedSlots.length ? bookedSlots.join(', ') : 'None'}.
@@ -694,8 +695,9 @@ STRICT RULES:
 - If user asks booked/unavailable slots, list ONLY booked slots.
 - NEVER ask for name, email, or designation.
 - ONLY ask for details (start time, end time, reason min 25 words) when user EXPLICITLY says they want to book.
-- After collecting booking details, confirm once then reply EXACTLY:
-[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
+- After collecting booking details, ask: "Would you like to confirm this meeting with Ayyappa?"
+- After user confirms, reply EXACTLY:
+[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
       container.scrollTop = container.scrollHeight;
