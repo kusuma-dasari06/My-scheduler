@@ -122,15 +122,14 @@
     </div>
   </div>
 
-  <!-- MoM Modal -->
   <div class="modal-overlay" id="momModal">
     <div class="modal" style="width:450px">
       <h3>Minutes of Meeting</h3>
       <div class="error-msg" id="momError"></div>
       <div class="form-group">
-        <label>Enter at least 5 points (one per line)</label>
-        <textarea id="momText" oninput="updateMomCount()" style="height:160px" placeholder="1. Discussed project timeline&#10;2. Agreed on next steps&#10;3. ..."></textarea>
-        <div class="word-count" id="momCount">0 / 5 points minimum</div>
+        <label>Enter Minutes of Meeting (minimum 30 words) *</label>
+        <textarea id="momText" oninput="updateMomCount()" style="height:160px" placeholder="Describe the meeting minutes here..."></textarea>
+        <div class="word-count" id="momCount">0 / 30 words minimum</div>
       </div>
       <div class="modal-btns">
         <button class="btn btn-secondary" onclick="closeMomModal()">Cancel</button>
@@ -411,18 +410,18 @@
 
     function closeMomModal() { document.getElementById('momModal').classList.remove('active'); }
 
-    function updateMomCount() {
-      const lines = document.getElementById('momText').value.trim().split('\n').filter(l => l.trim().length > 0).length;
+        function updateMomCount() {
+      const words = document.getElementById('momText').value.trim().split(/\s+/).filter(w => w.length > 0).length;
       const el = document.getElementById('momCount');
-      el.textContent = lines + ' / 5 points minimum';
-      el.className = 'word-count' + (lines < 5 ? ' error' : '');
+      el.textContent = words + ' / 30 words minimum';
+      el.className = 'word-count' + (words < 30 ? ' error' : '');
     }
 
     async function submitMom() {
       const text = document.getElementById('momText').value.trim();
-      const lines = text.split('\n').filter(l => l.trim().length > 0).length;
+      const words = text.split(/\s+/).filter(w => w.length > 0).length;
       const errEl = document.getElementById('momError');
-      if (lines < 5) { errEl.style.display = 'block'; errEl.textContent = 'Please enter at least 5 points.'; return; }
+      if (words < 30) { errEl.style.display = 'block'; errEl.textContent = 'Please enter at least 30 words.'; return; }
       await supabaseFetch('schedules?id=eq.' + currentMomSlotId, 'PATCH', { status: 'completed', minutes_of_meeting: text });
       closeMomModal();
       reloadSlots();
@@ -748,8 +747,8 @@ When the owner wants to edit a slot's title, identify the slot id, confirm the n
 When the owner wants to reschedule a slot, identify the slot id, ask the owner for a reason for rescheduling, confirm the new date, time, and reason with the owner, then once confirmed reply with EXACTLY this with times in strict 24-hour HH:MM format:
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM:reason]
 
-When the owner wants to mark a slot as completed/done, identify the slot id, ask for at least 5 minutes of meeting points, then reply with EXACTLY:
-[ACTION:COMPLETE:slot_id:point1|point2|point3|point4|point5]
+When the owner wants to mark a slot as completed/done, identify the slot id, ask for minutes of the meeting (MoM) of minimum 30 words, and once provided and confirmed by the owner, reply with EXACTLY:
+[ACTION:COMPLETE:slot_id:mom_text]
 
 When the owner wants to accept a pending booking request, identify the request id from the pending booking requests list above, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:ACCEPT_REQUEST:request_id]
