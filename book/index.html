@@ -611,6 +611,26 @@ for (let h = 5; h < 23; h++) {
   else allSlots.push(`${start} - ${end}`);
 }
 
+const lowerMsg = msg.toLowerCase();
+
+if (
+  lowerMsg.includes("available") &&
+  lowerMsg.includes("slot")
+) {
+  container.innerHTML += `
+    <div class="message ai">
+      <div class="message-bubble">
+        ${
+          allSlots.length
+            ? "Available slots today:<br>" + allSlots.join("<br>")
+            : "No available slots today."
+        }
+      </div>
+    </div>
+  `;
+  container.scrollTop = container.scrollHeight;
+  return;
+}
 const systemPrompt = `You are MyScheduler AI assistant. Today is ${dateStr} IST.
 Working hours: 5AM to 11PM. 
 Available slots: ${allSlots.length ? allSlots.join(', ') : 'None'}.
