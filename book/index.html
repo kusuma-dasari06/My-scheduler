@@ -392,6 +392,7 @@ function toggleProfile() {
   '&requested_date=gte.' + monthStr + '-01&requested_date=lte.' + monthStr + '-31&status=neq.declined'
 );
 pastBookedDates = Array.isArray(bookings) ? bookings.map(b => b.requested_date) : [];
+console.log('Past booked dates:',pastBookedDates);
   }
 
   for (let i = 0; i < firstDay; i++) {
