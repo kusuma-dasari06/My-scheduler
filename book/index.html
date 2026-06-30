@@ -507,9 +507,15 @@ function getAvailableSlots(bookedSlots) {
       const todayDateStrV = new Date().toISOString().split('T')[0];
       if (date < todayDateStrV) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
 
-      const existing = await supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled');
-      const overlap = existing.find(s => !(end <= s.start_time || start >= s.end_time));
-      if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no longer available, please choose another slot.'; return; }
+      const [existingSchedules, existingBookings] = await Promise.all([
+  supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled'),
+  supabaseFetch('booking_requests?requested_date=eq.' + date + '&status=neq.declined')
+]);
+const allExisting = [...existingSchedules, ...existingBookings.map(b => ({
+  start_time: b.start_time, end_time: b.end_time
+}))];
+const overlap = allExisting.find(s => !(end <= s.start_time || start >= s.end_time));
+if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no longer available, please choose another slot.'; return; }
 
       errEl.style.display = 'none';
       await supabaseFetch('booking_requests', 'POST', {
@@ -550,7 +556,7 @@ function getAvailableSlots(bookedSlots) {
 }
         if (details.start < '13:00' && details.end > '12:00') return '❌ Sorry, 12:00 PM to 1:00 PM is lunch break. Please choose another time.';
         const now = new Date();
-const currentDate = now.toISOString().split('T')[0];
+        const currentDate = new Date(now.getTime() + (5.5 * 60 * 60 * 1000)).toISOString().split('T')[0];
 const currentTime = now.toTimeString().slice(0,5);
 
 if (details.date === currentDate && details.start < currentTime) {
@@ -558,9 +564,15 @@ if (details.date === currentDate && details.start < currentTime) {
 }
         const todayDateStrV2 = new Date().toISOString().split('T')[0];
         if (details.date < todayDateStrV2) return '❌ Sorry, that date has already expired. Please choose today or a future date.';
-        const existing = await supabaseFetch('schedules?date=eq.' + details.date + '&status=neq.cancelled');
-        const overlap = existing.find(s => !(details.end <= s.start_time || details.start >= s.end_time));
-        if (overlap) return '❌ Sorry, that time is no longer available. Please choose another slot.';
+        const [existingSchedules, existingBookings] = await Promise.all([
+  supabaseFetch('schedules?date=eq.' + details.date + '&status=neq.cancelled'),
+  supabaseFetch('booking_requests?requested_date=eq.' + details.date + '&status=neq.declined')
+]);
+const allExisting = [...existingSchedules, ...existingBookings.map(b => ({
+  start_time: b.start_time, end_time: b.end_time
+}))];
+const overlap = allExisting.find(s => !(details.end <= s.start_time || details.start >= s.end_time));
+if (overlap) return '❌ Sorry, that time is no longer available. Please choose another slot.';
         await supabaseFetch('booking_requests', 'POST', {
   visitor_name: details.name + ' (' + details.designation + ')',
   visitor_email: details.email,
@@ -608,10 +620,8 @@ const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
 const currentTime = now.toTimeString().slice(0,5);
 
 const filteredSlots = slots.filter(s => {
-  return !(dateStr === now.toISOString().split('T')[0] && s.start_time.slice(0,5) < currentTime);
+  return !(dateStr === new Date(now.getTime() + (5.5 * 60 * 60 * 1000)).toISOString().split('T')[0] && s.start_time.slice(0,5) < currentTime);
 });
-      const bookedTimes = filteredSlots.map(s => `${s.start_time.slice(0,5)} to ${s.end_time.slice(0,5)}`);
-
       // Available slots calculate cheyyi
 const availableSlots = getAvailableSlots(filteredSlots);
 
