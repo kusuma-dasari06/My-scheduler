@@ -705,7 +705,7 @@ STRICT RULES:
   recognition.maxAlternatives = 1;
 
   const btn = document.getElementById('voiceBtn');
-  btn.textContent = '🔴';
+  btn.innerHTML = '<i class="fas fa-stop"></i>';
   btn.style.background = '#EF4444';
 
   recognition.start();
@@ -713,19 +713,19 @@ STRICT RULES:
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
     document.getElementById('chatInput').value = transcript;
-    btn.textContent = '🎤';
-    btn.style.background = '#334155';
-    sendMessage();
+    btn.innerHTML = '<i class="fas fa-microphone"></i>';
+btn.style.background = '#334155';
+sendMessage();
   };
 
   recognition.onerror = () => {
-    btn.textContent = '🎤';
-    btn.style.background = '#334155';
+    btn.innerHTML = '<i class="fas fa-microphone"></i>';
+btn.style.background = '#334155';
   };
 
   recognition.onend = () => {
-    btn.textContent = '🎤';
-    btn.style.background = '#334155';
+    btn.innerHTML = '<i class="fas fa-microphone"></i>';
+btn.style.background = '#334155';
   };
 }
 const savedVisitor = localStorage.getItem('loggedInVisitor');
