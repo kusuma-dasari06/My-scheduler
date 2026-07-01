@@ -1239,6 +1239,76 @@ Keep it concise and professional. Plain text only, no markdown stars.`;
     loadPendingCount();
     const today = new Date();
     selectDate(today.getFullYear(), today.getMonth(), today.getDate());
+    // ===== Admin Panel =====  
+    let adminPasswordCache = '';  
+  
+    function openAdminPanel() {  
+      document.getElementById('adminModal').classList.add('active');  
+      document.getElementById('adminLoginSection').style.display = 'block';  
+      document.getElementById('adminSettingsSection').style.display = 'none';  
+      document.getElementById('adminPassword').value = '';  
+      document.getElementById('adminMsg').textContent = '';  
+    }  
+  
+    function closeAdminPanel() {  
+      document.getElementById('adminModal').classList.remove('active');  
+      adminPasswordCache = '';  
+    }  
+  
+    async function adminLogin() {  
+      const pwd = document.getElementById('adminPassword').value;  
+      if (!pwd) return alert('Enter password');  
+      try {  
+        const res = await fetch('/api/admin-settings', {  
+          method: 'GET',  
+          headers: { 'x-owner-password': pwd }  
+        });  
+        if (res.status === 401) return alert('Wrong password');  
+        if (!res.ok) throw new Error('Failed');  
+        const data = await res.json();  
+        adminPasswordCache = pwd;  
+        document.getElementById('adminLoginSection').style.display = 'none';  
+        document.getElementById('adminSettingsSection').style.display = 'block';  
+        document.getElementById('currentKeyDisplay').textContent =  
+          'Current: ' + (data.gemini_api_key_masked || '(not set)');  
+        if (data.gemini_model) document.getElementById('newModel').value = data.gemini_model;  
+      } catch (e) {  
+        alert('Error: ' + e.message);  
+      }  
+    }  
+  
+    async function saveAdminSettings() {  
+      const newApiKey = document.getElementById('newApiKey').value.trim();  
+      const newModel = document.getElementById('newModel').value;  
+      const msg = document.getElementById('adminMsg');  
+      msg.style.color = '#94A3B8';  
+      msg.textContent = 'Saving...';  
+      try {  
+        const res = await fetch('/api/admin-settings', {  
+          method: 'POST',  
+          headers: {  
+            'Content-Type': 'application/json',  
+            'x-owner-password': adminPasswordCache  
+          },  
+          body: JSON.stringify({ gemini_api_key: newApiKey, gemini_model: newModel })  
+        });  
+        const data = await res.json();  
+        if (!res.ok) throw new Error(data.error || 'Failed');  
+        msg.style.color = '#10B981';  
+        msg.textContent = '✅ Saved successfully!';  
+        document.getElementById('newApiKey').value = '';  
+        // Refresh masked key  
+        const refresh = await fetch('/api/admin-settings', {  
+          headers: { 'x-owner-password': adminPasswordCache }  
+        });  
+        const rd = await refresh.json();  
+        document.getElementById('currentKeyDisplay').textContent =  
+          'Current: ' + (rd.gemini_api_key_masked || '(not set)');  
+      } catch (e) {  
+        msg.style.color = '#EF4444';  
+        msg.textContent = '❌ ' + e.message;  
+      }  
+    }
   </script>
 </body>
 </html>
