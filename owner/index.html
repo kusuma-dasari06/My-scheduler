@@ -116,7 +116,6 @@
       </div>
       <div class="chat-input">
         <input type="text" id="chatInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter') sendMessage()" />
-        <button id="micBtn" onclick="toggleVoiceInput()" style="background:#334155;color:#F1F5F9;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:16px;">🎤</button>
         <button id="micBtn" onclick="toggleVoiceInput()" style="background:#334155;color:#F1F5F9;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:16px;"><i class="fas fa-microphone"></i></button>
         <button onclick="sendMessage()">Send</button>
       </div>
@@ -742,7 +741,7 @@ let isListening = false;
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
 Pending booking requests: ${JSON.stringify(pending)}
 
-LANGUAGE RULE: Always reply in the same language the owner used in their message. If the owner writes in Telugu, reply in Telugu (Telugu script). If the owner writes in English, reply in English.
+LANGUAGE RULE: Always reply in the same language and script the owner used in their message. If the owner writes in Telugu (Telugu script), reply in Telugu (Telugu script). If the owner writes in English, reply in English. If the owner writes in Tenglish (Telugu words written in English/Latin script, e.g., 'meeting complete chey' or 'yela unnavu'), you MUST reply in Tenglish (Telugu words in English/Latin script). Do not translate Tenglish to Telugu script or English.
 
 You can have a normal friendly conversation (greetings, small talk) and also help manage the schedule. Reply in plain text only, no stars, no markdown formatting. Keep replies short and directly answer only what was asked.
 
@@ -953,9 +952,6 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           console.log('chat_history log failed (non-critical):', e);
         }
         container.scrollTop = container.scrollHeight;
-        if (isVoiceMessage) {
-          speakText(cleanReply, lastDetectedLang);
-        }
         isVoiceMessage = false;
       } catch(e) {
         document.getElementById(loadingId)?.remove();
