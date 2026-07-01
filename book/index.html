@@ -577,13 +577,18 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
       container.innerHTML = '<p style="color:#94A3B8;font-size:13px">Loading...</p>';
       const data = await supabaseFetch('booking_requests?visitor_email=eq.' + encodeURIComponent(email) + '&order=created_at.desc');
       if (!data.length) { container.innerHTML = '<p style="color:#94A3B8;font-size:13px">No booking requests found for this email.</p>'; return; }
-      container.innerHTML = data.map(b => `
-        <div class="booking-card">
-          <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
-          <div style="font-size:13px;margin-bottom:4px">${b.requested_date} | ${b.start_time.slice(0,5)} — ${b.end_time.slice(0,5)}</div>
-          ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8">Remarks: ${b.owner_remarks}</div>` : ''}
-        </div>
-      `).join('');
+   container.innerHTML = data.map(b => `
+    <div class="booking-card">
+      <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
+      <div style="font-size:13px;margin-bottom:4px">${b.requested_date} | ${b.start_time.slice(0,5)} — ${b.end_time.slice(0,5)}</div>
+      ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8">Remarks: ${b.owner_remarks}</div>` : ''}
+      ${b.status === 'pending' ? `
+        <button onclick="withdrawRequest('${b.id}', 'pending', '')" style="margin-top:8px;padding:4px 12px;background:#EF4444;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Withdraw</button>
+      ` : (b.status === 'accepted' || b.status === 'accepted_with_remarks') ? `
+        <button onclick="openWithdrawalModal('${b.id}','${b.visitor_email || ''}','${b.visitor_name || ''}','${b.requested_date}','${b.start_time.slice(0,5)}','${b.end_time.slice(0,5)}')" style="margin-top:8px;padding:4px 12px;background:#F59E0B;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Request Withdrawal</button>
+      ` : ''}
+    </div>
+  `).join('');
     }
 
     async function executeChatBooking(details) {
@@ -776,7 +781,69 @@ if (savedVisitor) {
   loggedInVisitor = JSON.parse(savedVisitor);
   showMainApp();
 }
+let currentWithdrawalId = null;
+    let currentWithdrawalEmail = null;
+    let currentWithdrawalName = null;
+    let currentWithdrawalDate = null;
+    let currentWithdrawalStart = null;
+    let currentWithdrawalEnd = null;
+
+    function openWithdrawalModal(id, email, name, date, start, end) {
+      currentWithdrawalId = id;
+      currentWithdrawalEmail = email;
+      currentWithdrawalName = name;
+      currentWithdrawalDate = date;
+      currentWithdrawalStart = start;
+      currentWithdrawalEnd = end;
+      document.getElementById('withdrawalReason').value = '';
+      document.getElementById('withdrawalModal').classList.add('active');
+    }
+
+    function closeWithdrawalModal() {
+      document.getElementById('withdrawalModal').classList.remove('active');
+    }
+
+    async function withdrawRequest(id) {
+      if (!confirm('Are you sure you want to withdraw this request?')) return;
+      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
+      alert('Your request has been withdrawn successfully.');
+      loadPastBookings();
+    }
+
+    async function submitWithdrawal() {
+      const reason = document.getElementById('withdrawalReason').value.trim();
+      if (!reason) { alert('Please provide a reason for withdrawal.'); return; }
+      await supabaseFetch('booking_requests?id=eq.' + currentWithdrawalId, 'PATCH', {
+        status: 'withdrawal_requested',
+        withdrawal_reason: reason
+      });
+      emailjs.send('service_88v685e', 'template_u0x07ob', {
+        visitor_name: currentWithdrawalName || 'Visitor',
+        visitor_email: currentWithdrawalEmail,
+        requested_date: currentWithdrawalDate,
+        start_time: currentWithdrawalStart,
+        end_time: currentWithdrawalEnd,
+        description: 'Withdrawal requested by visitor. Reason: ' + reason
+      });
+      closeWithdrawalModal();
+      alert('Your withdrawal request has been sent to the owner.');
+      loadPastBookings();
+    }
   </script>
   </div>
+  <div class="modal-overlay" id="withdrawalModal">
+  <div class="modal" style="width:400px">
+    <h3>Request Withdrawal</h3>
+    <p style="color:#94A3B8;font-size:13px;margin-bottom:16px">Please provide a reason for withdrawing from this accepted meeting.</p>
+    <div class="form-group">
+      <label>Reason *</label>
+      <textarea id="withdrawalReason" style="height:80px" placeholder="Why do you want to withdraw from this meeting?"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeWithdrawalModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitWithdrawal()">Send Request</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
