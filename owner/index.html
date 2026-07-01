@@ -87,6 +87,7 @@
       <button class="btn btn-secondary" onclick="copyBookingLink()">Copy Booking Link</button>
       <button class="btn btn-secondary" onclick="openRequestsDrawer()">Requests <span class="badge" id="badge">0</span></button>
       <button class="btn btn-primary" onclick="openAddSlot()">+ Add to Schedule</button>
+      <button class="btn btn-secondary" onclick="openAdminPanel()">⚙️ Admin</button>
     </div>
   </div>
   <div class="layout">
@@ -280,7 +281,46 @@
       </div>
     </div>
   </div>
-
+<!-- Admin Panel Modal -->  
+  <div class="modal-overlay" id="adminModal">  
+    <div class="modal" style="max-width:500px;">  
+      <h3 style="margin-bottom:16px;">⚙️ Admin Panel</h3>  
+  
+      <div id="adminLoginSection">  
+        <label style="display:block;margin-bottom:8px;">Owner Password</label>  
+        <input type="password" id="adminPassword" placeholder="Enter password"  
+          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;" />  
+        <div style="display:flex;gap:8px;justify-content:flex-end;">  
+          <button class="btn btn-secondary" onclick="closeAdminPanel()">Cancel</button>  
+          <button class="btn btn-primary" onclick="adminLogin()">Login</button>  
+        </div>  
+      </div>  
+  
+      <div id="adminSettingsSection" style="display:none;">  
+        <label style="display:block;margin-bottom:8px;">Gemini API Key</label>  
+        <div id="currentKeyDisplay" style="font-size:12px;color:#94A3B8;margin-bottom:6px;"></div>  
+        <input type="text" id="newApiKey" placeholder="New API key (leave blank to keep current)"  
+          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;" />  
+  
+        <label style="display:block;margin-bottom:8px;">Gemini Model</label>  
+        <select id="newModel"  
+          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;">  
+          <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>  
+          <option value="gemini-2.5-flash">gemini-2.5-flash</option>  
+          <option value="gemini-2.5-pro">gemini-2.5-pro</option>  
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>  
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>  
+          <option value="gemini-1.5-pro">gemini-1.5-pro</option>  
+        </select>  
+  
+        <div id="adminMsg" style="font-size:13px;margin-bottom:12px;"></div>  
+        <div style="display:flex;gap:8px;justify-content:flex-end;">  
+          <button class="btn btn-secondary" onclick="closeAdminPanel()">Close</button>  
+          <button class="btn btn-primary" onclick="saveAdminSettings()">Save</button>  
+        </div>  
+      </div>  
+    </div>  
+  </div>
   <script>
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
@@ -1159,6 +1199,46 @@ Keep it concise and professional. Plain text only, no markdown stars.`;
     loadPendingCount();
     const today = new Date();
     selectDate(today.getFullYear(), today.getMonth(), today.getDate());
+    <!-- Admin Panel Modal -->  
+  <div class="modal-overlay" id="adminModal">  
+    <div class="modal" style="max-width:500px;">  
+      <h3 style="margin-bottom:16px;">⚙️ Admin Panel</h3>  
+  
+      <div id="adminLoginSection">  
+        <label style="display:block;margin-bottom:8px;">Owner Password</label>  
+        <input type="password" id="adminPassword" placeholder="Enter password"  
+          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;" />  
+        <div style="display:flex;gap:8px;justify-content:flex-end;">  
+          <button class="btn btn-secondary" onclick="closeAdminPanel()">Cancel</button>  
+          <button class="btn btn-primary" onclick="adminLogin()">Login</button>  
+        </div>  
+      </div>  
+  
+      <div id="adminSettingsSection" style="display:none;">  
+        <label style="display:block;margin-bottom:8px;">Gemini API Key</label>  
+        <div id="currentKeyDisplay" style="font-size:12px;color:#94A3B8;margin-bottom:6px;"></div>  
+        <input type="text" id="newApiKey" placeholder="New API key (leave blank to keep current)"  
+          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;" />  
+  
+        <label style="display:block;margin-bottom:8px;">Gemini Model</label>  
+        <select id="newModel"  
+          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;">  
+          <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>  
+          <option value="gemini-2.5-flash">gemini-2.5-flash</option>  
+          <option value="gemini-2.5-pro">gemini-2.5-pro</option>  
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>  
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>  
+          <option value="gemini-1.5-pro">gemini-1.5-pro</option>  
+        </select>  
+  
+        <div id="adminMsg" style="font-size:13px;margin-bottom:12px;"></div>  
+        <div style="display:flex;gap:8px;justify-content:flex-end;">  
+          <button class="btn btn-secondary" onclick="closeAdminPanel()">Close</button>  
+          <button class="btn btn-primary" onclick="saveAdminSettings()">Save</button>  
+        </div>  
+      </div>  
+    </div>  
+  </div>
   </script>
 </body>
 </html>
