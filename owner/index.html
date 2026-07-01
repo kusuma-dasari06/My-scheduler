@@ -1067,7 +1067,16 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           <div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${r.visitor_email}</div>
           <div style="font-size:13px;margin-bottom:4px">${r.requested_date} | ${r.start_time.slice(0,5)} — ${r.end_time.slice(0,5)}</div>
           <div style="font-size:13px;margin-bottom:12px;color:#CBD5E1">${r.description}</div>
-          ${r.status === 'pending' ? `
+          ${r.status === 'withdrawal_requested' ? `
+          <div style="background:#F59E0B22;border:1px solid #F59E0B;border-radius:6px;padding:8px;margin-bottom:8px;font-size:12px;color:#F59E0B;">
+            ⚠️ Visitor requested withdrawal. Reason: ${r.withdrawal_reason || '—'}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#22C55E;color:white" onclick="acceptWithdrawal('${r.id}','${r.visitor_email}','${r.visitor_name}','${r.requested_date}','${r.start_time}','${r.end_time}')">Accept Withdrawal</button>
+            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="declineWithdrawal('${r.id}','${r.visitor_email}','${r.visitor_name}','${r.requested_date}','${r.start_time}','${r.end_time}')">Decline Withdrawal</button>
+          </div>` : r.status === 'withdrawn' ? `
+          <div style="font-size:12px;color:#EF4444;">❌ Withdrawn by visitor</div>
+          ` : r.status === 'pending' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="openRemarks('accept_remarks','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}','${(r.description||'').replace(/'/g,"&#39;")}')">Accept</button>
             <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Request Reschedule</button>
@@ -1151,6 +1160,34 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
         });
       }
       closeRemarksModal();
+      loadRequests();
+      loadPendingCount();
+    }
+    async function acceptWithdrawal(id, email, name, date, start, end) {
+      if (!confirm('Accept this withdrawal request? The meeting will be cancelled.')) return;
+      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
+      const schedules = await supabaseFetch('schedules?date=eq.' + date + '&visitor_email=eq.' + email + '&status=neq.cancelled');
+      if (schedules[0]) {
+        await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled' });
+      }
+      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+        visitor_name: name, visitor_email: email,
+        requested_date: date, start_time: start, end_time: end,
+        description: 'Your withdrawal request has been accepted. The meeting has been cancelled.'
+      });
+      loadRequests();
+      loadPendingCount();
+      reloadSlots();
+    }
+
+    async function declineWithdrawal(id, email, name, date, start, end) {
+      if (!confirm('Decline this withdrawal? The meeting will remain as accepted.')) return;
+      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'accepted' });
+      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+        visitor_name: name, visitor_email: email,
+        requested_date: date, start_time: start, end_time: end,
+        description: 'Your withdrawal request has been declined. The meeting remains as scheduled.'
+      });
       loadRequests();
       loadPendingCount();
     }

@@ -40,6 +40,8 @@
     .status-declined { background: #EF444422; color: #EF4444; }
     .status-reschedule_requested { background: #3B82F622; color: #3B82F6; }
     .status-accepted_with_remarks { background: #22C55E22; color: #22C55E; }
+    .status-withdrawn { background: #EF444422; color: #EF4444; }
+    .status-withdrawal_requested { background: #F59E0B22; color: #F59E0B; }
     .chat-messages { height: calc(100vh - 220px); overflow-y: auto; margin-bottom: 12px; }
     .message { margin-bottom: 12px; display: flex; flex-direction: column; }
     .message.user { align-items: flex-end; }
@@ -581,9 +583,10 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
     <div class="booking-card">
       <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
       <div style="font-size:13px;margin-bottom:4px">${b.requested_date} | ${b.start_time.slice(0,5)} — ${b.end_time.slice(0,5)}</div>
-      ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8">Remarks: ${b.owner_remarks}</div>` : ''}
+      ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8;margin-bottom:4px">Remarks: ${b.owner_remarks}</div>` : ''}
+      ${b.withdrawal_reason ? `<div style="font-size:12px;color:#F59E0B;margin-bottom:4px">Withdrawal reason: ${b.withdrawal_reason}</div>` : ''}
       ${b.status === 'pending' ? `
-        <button onclick="withdrawRequest('${b.id}', 'pending', '')" style="margin-top:8px;padding:4px 12px;background:#EF4444;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Withdraw</button>
+        <button onclick="withdrawRequest('${b.id}')" style="margin-top:8px;padding:4px 12px;background:#EF4444;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Withdraw</button>
       ` : (b.status === 'accepted' || b.status === 'accepted_with_remarks') ? `
         <button onclick="openWithdrawalModal('${b.id}','${b.visitor_email || ''}','${b.visitor_name || ''}','${b.requested_date}','${b.start_time.slice(0,5)}','${b.end_time.slice(0,5)}')" style="margin-top:8px;padding:4px 12px;background:#F59E0B;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Request Withdrawal</button>
       ` : ''}
@@ -805,18 +808,22 @@ let currentWithdrawalId = null;
 
     async function withdrawRequest(id) {
       if (!confirm('Are you sure you want to withdraw this request?')) return;
-      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
+      const result = await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
+      console.log('Withdraw result:', result);
+      const emailInput = document.getElementById('pastEmail');
+      const visitorEmail = emailInput ? emailInput.value.trim() : '';
       alert('Your request has been withdrawn successfully.');
-      loadPastBookings();
+      await loadPastBookings();
     }
 
     async function submitWithdrawal() {
       const reason = document.getElementById('withdrawalReason').value.trim();
       if (!reason) { alert('Please provide a reason for withdrawal.'); return; }
-      await supabaseFetch('booking_requests?id=eq.' + currentWithdrawalId, 'PATCH', {
+      const result = await supabaseFetch('booking_requests?id=eq.' + currentWithdrawalId, 'PATCH', {
         status: 'withdrawal_requested',
         withdrawal_reason: reason
       });
+      console.log('Withdrawal request result:', result);
       emailjs.send('service_88v685e', 'template_u0x07ob', {
         visitor_name: currentWithdrawalName || 'Visitor',
         visitor_email: currentWithdrawalEmail,
