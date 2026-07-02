@@ -859,8 +859,11 @@ When the owner wants to accept a visitor's withdrawal request, identify the requ
 When the owner wants to decline a visitor's withdrawal request, identify the request id, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:DECLINE_WITHDRAWAL:request_id]
 
-CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Never take an action without the owner's explicit confirmation.`;
+When the owner asks for a daily report or summary (of today or any specific date), reply with EXACTLY:
+[ACTION:DAILY_REPORT:date]
+(use today's date ${todayStr} if no date is mentioned, format YYYY-MM-DD)
 
+CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Never take an action without the owner's explicit confirmation.`;
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
       if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
 
@@ -1250,16 +1253,9 @@ function closeDailyReport() {
   document.getElementById('dailyReportModal').classList.remove('active');
 }
 
-async function generateReport() {
-  const date = document.getElementById('reportDate').value;
-  const container = document.getElementById('reportContainer');
-  if (!date) { container.innerHTML = '<p style="color:#EF4444">Please select a date.</p>'; return; }
-
-  container.innerHTML = '<p style="color:#94A3B8">Generating report...</p>';
-
+async function buildDailyReportText(date) {
   const slots = await supabaseFetch('schedules?date=eq.' + date + '&order=start_time');
   const bookingRequests = await supabaseFetch('booking_requests?requested_date=eq.' + date);
-
   const completed = slots.filter(s => s.status === 'completed');
   const cancelled = slots.filter(s => s.status === 'cancelled');
   const rescheduled = slots.filter(s => s.status === 'rescheduled');
@@ -1278,17 +1274,30 @@ Provide a report with:
 
 Keep it concise and professional. Plain text only, no markdown stars.`;
 
+  const res = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemPrompt,
+      messages: [{ role: 'user', parts: [{ text: 'Generate daily report for ' + date }] }]
+    })
+  });
+  const data = await res.json();
+  const narrative = data.reply || 'Could not generate report.';
+  const statsLine = `Completed: ${completed.length} | Cancelled: ${cancelled.length} | Rescheduled: ${rescheduled.length} | Upcoming: ${upcoming.length}`;
+
+  return { completed, cancelled, rescheduled, upcoming, narrative, statsLine };
+}
+
+async function generateReport() {
+  const date = document.getElementById('reportDate').value;
+  const container = document.getElementById('reportContainer');
+  if (!date) { container.innerHTML = '<p style="color:#EF4444">Please select a date.</p>'; return; }
+
+  container.innerHTML = '<p style="color:#94A3B8">Generating report...</p>';
+
   try {
-    const res = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemPrompt,
-        messages: [{ role: 'user', parts: [{ text: 'Generate daily report for ' + date }] }]
-      })
-    });
-    const data = await res.json();
-    const report = data.reply || 'Could not generate report.';
+    const { completed, cancelled, rescheduled, upcoming, narrative: report } = await buildDailyReportText(date);
 
     container.innerHTML = `
       <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:12px">
