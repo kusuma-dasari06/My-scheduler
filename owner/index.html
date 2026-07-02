@@ -1079,7 +1079,6 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
     const { statsLine, narrative } = await buildDailyReportText(rDate);
     const fullText = statsLine + '\n\n' + narrative;
     container.innerHTML += `<div class="message ai"><div class="message-bubble" style="white-space:pre-wrap">${fullText}</div></div>`;
-    if (isVoiceMessage) speakText(narrative, lastDetectedLang);
     try {
       await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'ai', message: fullText });
     } catch (e) {
