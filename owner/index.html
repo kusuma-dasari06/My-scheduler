@@ -1058,7 +1058,7 @@ if (reply.includes('[ACTION:DECLINE_WITHDRAWAL:')) {
     const reqData = await supabaseFetch('booking_requests?id=eq.' + reqId);
     if (reqData[0]) {
       const r = reqData[0];
-      await supabaseFetch('booking_requests?id=eq.' + reqId, 'PATCH', { status: 'accepted' });
+      await supabaseFetch('booking_requests?id=eq.' + reqId, 'PATCH', { status: 'withdrawal_declined' });
       emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
         visitor_name: r.visitor_name, visitor_email: r.visitor_email,
         requested_date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
@@ -1228,7 +1228,7 @@ if (reply.includes('[ACTION:DECLINE_WITHDRAWAL:')) {
 
     async function declineWithdrawal(id, email, name, date, start, end) {
       if (!confirm('Decline this withdrawal? The meeting will remain as accepted.')) return;
-      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'accepted' });
+      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawal_declined' });
       emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
         visitor_name: name, visitor_email: email,
         requested_date: date, start_time: start, end_time: end,
