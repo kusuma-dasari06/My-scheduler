@@ -688,7 +688,16 @@ for (let h = 5; h < 23; h++) {
     allSlots.push(`${start.slice(0,5)} - ${end.slice(0,5)}`);
   }
 }
+let visitorBookings = [];
+if (loggedInVisitor) {
+  visitorBookings = await supabaseFetch(
+    'booking_requests?visitor_email=eq.' +
+    encodeURIComponent(loggedInVisitor.email) +
+    '&order=created_at.desc'
+  );
+}
 const systemPrompt = `You are MyScheduler AI assistant. Today is ${dateStr} IST.
+Visitor's past booking requests: ${JSON.stringify(visitorBookings)}.
 The meeting owner is Ayyappa. Mention Ayyappa's name naturally in the beginning and final confirmation messages.
 Working hours: 5AM to 11PM. 
 Available slots: ${allSlots.length ? allSlots.join(', ') : 'None'}.
@@ -705,7 +714,13 @@ STRICT RULES:
 - ONLY ask for details (start time, end time, reason min 25 words) when user EXPLICITLY says they want to book.
 - After collecting booking details, ask: "Would you like to confirm this meeting with Ayyappa?"
 - After user confirms, reply EXACTLY:
-[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
+[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE
+
+When visitor wants to withdraw a pending request, reply EXACTLY:
+[WITHDRAW] id=booking_request_id
+
+When visitor wants to request withdrawal for an accepted meeting, reply EXACTLY:
+[WITHDRAW_REQUEST] id=booking_request_id | reason=VALUE`;
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
       container.scrollTop = container.scrollHeight;
@@ -722,20 +737,72 @@ STRICT RULES:
         chatHistory.push({ role: 'model', parts: [{ text: reply }] });
 
         if (reply.includes('[BOOK]')) {
-          const bookLine = reply.split('\n').find(l => l.includes('[BOOK]'));
-          const parse = (key) => {
-            const match = bookLine.match(new RegExp(key + '=([^|]+)'));
-            return match ? match[1].trim() : '';
-          };
-          const details = {
-            name: parse('name'), email: parse('email'), date: parse('date'),
-            start: parse('start'), end: parse('end'), desc: parse('desc')
-          };
-          const result = await executeChatBooking(details);
-          container.innerHTML += `<div class="message ai"><div class="message-bubble">${result}</div></div>`;
-        } else {
-          container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
-        }
+  const bookLine = reply.split('\n').find(l => l.includes('[BOOK]'));
+  const parse = (key) => {
+    const match = bookLine.match(new RegExp(key + '=([^|]+)'));
+    return match ? match[1].trim() : '';
+  };
+
+  const details = {
+    name: parse('name'),
+    email: parse('email'),
+    date: parse('date'),
+    start: parse('start'),
+    end: parse('end'),
+    desc: parse('desc')
+  };
+
+  const result = await executeChatBooking(details);
+  container.innerHTML += `<div class="message ai"><div class="message-bubble">${result}</div></div>`;
+
+} else if (reply.includes('[WITHDRAW]')) {
+
+  const line = reply.split('\n').find(l => l.includes('[WITHDRAW]'));
+  const idMatch = line && line.match(/id=([^\s|]+)/);
+
+  if (idMatch) {
+    await supabaseFetch('booking_requests?id=eq.' + idMatch[1], 'PATCH', {
+      status: 'withdrawn'
+    });
+
+    container.innerHTML += `<div class="message ai"><div class="message-bubble">✅ Your request has been withdrawn successfully.</div></div>`;
+    loadPastBookings();
+  }
+
+} else if (reply.includes('[WITHDRAW_REQUEST]')) {
+
+  const line = reply.split('\n').find(l => l.includes('[WITHDRAW_REQUEST]'));
+  const idMatch = line && line.match(/id=([^\s|]+)/);
+  const reasonMatch = line && line.match(/reason=(.+)/);
+
+  if (idMatch && reasonMatch) {
+    const reqData = await supabaseFetch('booking_requests?id=eq.' + idMatch[1]);
+
+    if (reqData[0]) {
+      const r = reqData[0];
+
+      await supabaseFetch('booking_requests?id=eq.' + idMatch[1], 'PATCH', {
+        status: 'withdrawal_requested',
+        withdrawal_reason: reasonMatch[1].trim()
+      });
+
+      emailjs.send('service_88v685e', 'template_u0x07ob', {
+        visitor_name: r.visitor_name,
+        visitor_email: r.visitor_email,
+        requested_date: r.requested_date,
+        start_time: r.start_time,
+        end_time: r.end_time,
+        description: 'Withdrawal requested. Reason: ' + reasonMatch[1].trim()
+      });
+
+      container.innerHTML += `<div class="message ai"><div class="message-bubble">✅ Your withdrawal request has been sent to the owner.</div></div>`;
+      loadPastBookings();
+    }
+  }
+
+} else {
+  container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
+}
         container.scrollTop = container.scrollHeight;
       } catch(e) {
         document.getElementById(loadingId) && document.getElementById(loadingId).remove();
