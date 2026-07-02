@@ -1072,6 +1072,24 @@ if (reply.includes('[ACTION:DECLINE_WITHDRAWAL:')) {
   }
 }
 
+if (reply.includes('[ACTION:DAILY_REPORT:')) {
+  const match = reply.match(/\[ACTION:DAILY_REPORT:([^\]]+)\]/);
+  if (match) {
+    const rDate = match[1].trim();
+    const { statsLine, narrative } = await buildDailyReportText(rDate);
+    const fullText = statsLine + '\n\n' + narrative;
+    container.innerHTML += `<div class="message ai"><div class="message-bubble" style="white-space:pre-wrap">${fullText}</div></div>`;
+    if (isVoiceMessage) speakText(fullText, lastDetectedLang);
+    try {
+      await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'ai', message: fullText });
+    } catch (e) {
+      console.log('chat_history log failed (non-critical):', e);
+    }
+    container.scrollTop = container.scrollHeight;
+    isVoiceMessage = false;
+    return;
+  }
+}
         let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
         if (!cleanReply) cleanReply = 'Done! Your request has been processed.';
         container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
