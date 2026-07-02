@@ -813,13 +813,15 @@ let isListening = false;
       const d = String(today.getDate()).padStart(2,'0');
       const todayStr = `${y}-${m}-${d}`;
       const slots = await supabaseFetch('schedules?status=neq.cancelled&order=date,start_time');
-      const pending = await supabaseFetch('booking_requests?status=eq.pending');
+      const requests = await supabaseFetch(
+  'booking_requests?or=(status.eq.pending,status.eq.withdrawal_requested)'
+);
 
       const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. 12:00 PM to 1:00 PM is a lunch break. Only mention this if the owner specifically tries to book, reschedule, or ask about a slot that overlaps 12:00-13:00 — do not mention lunch break in unrelated replies.
       Never book or reschedule any slot to a date before today (${todayStr}). Only mention this if the owner specifically tries to use a past date — do not mention it in unrelated replies.
 
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
-Pending booking requests: ${JSON.stringify(pending)}
+Booking requests (including pending and withdrawal_requested): ${JSON.stringify(requests)}
 
 LANGUAGE RULE: Always reply in the same language and script the owner used in their message. If the owner writes in Telugu (Telugu script), reply in Telugu (Telugu script). If the owner writes in English, reply in English. If the owner writes in Tenglish (Telugu words written in English/Latin script, e.g., 'meeting complete chey' or 'yela unnavu'), you MUST reply in Tenglish (Telugu words in English/Latin script). Do not translate Tenglish to Telugu script or English.
 
