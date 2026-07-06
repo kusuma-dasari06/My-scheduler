@@ -41,6 +41,7 @@
     .status-reschedule_requested { background: #3B82F622; color: #3B82F6; }
     .status-accepted_with_remarks { background: #22C55E22; color: #22C55E; }
     .status-withdrawn { background: #47556922; color: #94A3B8; }
+    .status-withdraw_requested { background: #F9731622; color: #F97316; }
     .chat-messages { height: calc(100vh - 220px); overflow-y: auto; margin-bottom: 12px; }
     .message { margin-bottom: 12px; display: flex; flex-direction: column; }
     .message.user { align-items: flex-end; }
@@ -549,6 +550,22 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
         const isFuture = b.requested_date > todayStr || (b.requested_date === todayStr && b.start_time.slice(0, 5) > currentTimeStr);
         const canWithdraw = isFuture && b.status !== 'withdrawn' && b.status !== 'declined';
         
+        let withdrawBtnHtml = '';
+        if (isFuture) {
+          if (b.status === 'pending') {
+            withdrawBtnHtml = `
+              <button class="btn btn-cancel" style="background:#EF4444; color:white; font-size:11px; padding:4px 8px; border-radius:4px; margin-top:6px; cursor:pointer;" onclick="directWithdraw('${b.id}')">
+                Withdraw
+              </button>
+            `;
+          } else if (b.status === 'accepted' || b.status === 'accepted_with_remarks') {
+            withdrawBtnHtml = `
+              <button class="btn btn-cancel" style="background:#F97316; color:white; font-size:11px; padding:4px 8px; border-radius:4px; margin-top:6px; cursor:pointer;" onclick="requestWithdraw('${b.id}', '${b.requested_date}', '${b.start_time}', '${b.end_time}', '${b.visitor_email}', '${b.visitor_name.replace(/'/g,"\\'")}')">
+                Request Withdraw
+              </button>
+            `;
+          }
+        }
         return `
         <div class="booking-card" id="booking-card-${b.id}">
           <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
@@ -559,11 +576,13 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
               Withdraw Request
             </button>
           ` : ''}
+          ${withdrawBtnHtml}
         </div>
       `;
       }).join('');
     }
     async function withdrawRequest(id, date, start, end, email, name) {
+    async function directWithdraw(id) {
       if (!confirm('Are you sure you want to withdraw this meeting request?')) return;
       try {
         await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
@@ -584,6 +603,24 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
       } catch (e) {
         console.error('Withdraw failed:', e);
         alert('Failed to withdraw request.');
+      }
+    }
+    async function requestWithdraw(id, date, start, end, email, name) {
+      if (!confirm('Are you sure you want to request withdrawal for this accepted meeting? This will send a request to Ayyappa.')) return;
+      try {
+        await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdraw_requested' });
+        
+        emailjs.send('service_88v685e', 'template_e4ekmie', {
+          visitor_name: name, visitor_email: email, requested_date: date,
+          start_time: start.slice(0,5), end_time: end.slice(0,5),
+          description: 'The visitor has requested to withdraw their accepted meeting.'
+        });
+        
+        alert('Your withdraw request has been submitted to Ayyappa.');
+        loadPastBookings();
+      } catch (e) {
+        console.error('Withdraw request failed:', e);
+        alert('Failed to request withdrawal.');
       }
     }
     async function executeChatBooking(details) {
@@ -745,7 +782,73 @@ STRICT RULES:
   const btn = document.getElementById('voiceBtn');
   btn.innerHTML = '<i class="fas fa-stop"></i>';
   btn.style.background = '#EF4444';
+    let isVisitorListening = false;
+    let visitorRecognition = null;
   recognition.start();
+    function startVoice() {
+      const btn = document.getElementById('voiceBtn');
+      if (isVisitorListening) {
+        if (visitorRecognition) {
+          visitorRecognition.onend = null;
+          visitorRecognition.stop();
+        }
+        isVisitorListening = false;
+        btn.style.background = '#334155';
+        btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        sendMessage();
+        return;
+      }
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Your browser does not support voice input. Please use Chrome.');
+        return;
+      }
+      
+      visitorRecognition = new SpeechRecognition();
+      visitorRecognition.lang = 'en-IN';
+      visitorRecognition.continuous = true;
+      visitorRecognition.interimResults = false;
+      visitorRecognition.maxAlternatives = 1;
+      
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      btn.style.background = '#22C55E';
+      isVisitorListening = true;
+      
+      visitorRecognition.onresult = (event) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          }
+        }
+        if (finalTranscript) {
+          const input = document.getElementById('chatInput');
+          input.value = (input.value.trim() + ' ' + finalTranscript).trim();
+        }
+      };
+      
+      visitorRecognition.onerror = () => {
+        isVisitorListening = false;
+        btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        btn.style.background = '#334155';
+      };
+      
+      visitorRecognition.onend = () => {
+        isVisitorListening = false;
+        btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        btn.style.background = '#334155';
+      };
+      
+      try {
+        visitorRecognition.start();
+      } catch(e) {
+        console.log(e);
+        isVisitorListening = false;
+        btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        btn.style.background = '#334155';
+      }
+    }
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
     document.getElementById('chatInput').value = transcript;

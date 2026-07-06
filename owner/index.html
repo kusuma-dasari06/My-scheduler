@@ -85,142 +85,44 @@
     <div class="header-btns">
       <button class="btn btn-secondary" onclick="openDailyReport()">📊 Daily Report</button>
       <button class="btn btn-secondary" onclick="openSettingsModal()">⚙️ Settings</button>
+      <button class="btn btn-secondary" onclick="openAdminPasswordModal()">⚙️ Admin</button>
       <button class="btn btn-secondary" onclick="copyBookingLink()">Copy Booking Link</button>
       <button class="btn btn-secondary" onclick="openRequestsDrawer()">Requests <span class="badge" id="badge">0</span></button>
       <button class="btn btn-primary" onclick="openAddSlot()">+ Add to Schedule</button>
-    </div>
   </div>
-  <div class="layout">
-    <div class="panel">
-      <h2>Calendar</h2>
-      <div class="calendar-header">
-        <button onclick="changeMonth(-1)">&#8592;</button>
-        <span id="monthYear"></span>
-        <button onclick="changeMonth(1)">&#8594;</button>
-      </div>
-      <div class="calendar-grid" id="calendarGrid"></div>
-      <button class="btn btn-secondary" style="width:100%; margin-top:12px;" onclick="openChatHistory()">📜 Chat History</button>
-    </div>
-    <div class="panel">
-      <h2>Schedule for <span id="selectedDateLabel">Today</span></h2>
-      <div id="slotsContainer"><p style="color:#94A3B8">Select a date to view slots.</p></div>
-      <div class="status-counts">
-        <div class="count-item completed"><div class="count-num" id="countCompleted">0</div><div class="count-label">Completed</div></div>
-        <div class="count-item rescheduled"><div class="count-num" id="countRescheduled">0</div><div class="count-label">Rescheduled</div></div>
-        <div class="count-item cancelled"><div class="count-num" id="countCancelled">0</div><div class="count-label">Cancelled</div></div>
-      </div>
-    </div>
-    <div class="panel">
-      <h2>AI Assistant</h2>
-      <div class="chat-messages" id="chatMessages">
-        <div class="message ai"><div class="message-bubble">Hi! I'm your scheduling assistant. Ask me anything about your schedule!</div></div>
-      </div>
-      <div class="chat-input">
-        <input type="text" id="chatInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter') sendMessage()" />
-        <button id="micBtn" onclick="toggleVoiceInput()" style="background:#334155;color:#F1F5F9;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:16px;"><i class="fas fa-microphone"></i></button>
-        <button onclick="sendMessage()">Send</button>
-      </div>
-    </div>
-  </div>
-  <!-- MoM Modal -->
-  <div class="modal-overlay" id="momModal">
-    <div class="modal" style="width:450px">
-      <h3>Minutes of Meeting</h3>
-      <div class="error-msg" id="momError"></div>
+</div>
+  <!-- Admin Verification Modal -->
+  <div class="modal-overlay" id="adminPasswordModal">
+    <div class="modal" style="width:400px">
+      <h3>Admin Panel Verification</h3>
+      <div class="error-msg" id="adminPasswordError"></div>
       <div class="form-group">
-        <label>Enter Minutes of Meeting (minimum 30 words) *</label>
-        <textarea id="momText" oninput="updateMomCount()" style="height:160px" placeholder="Describe the meeting minutes here..."></textarea>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-          <button id="momVoiceBtn" onclick="toggleMomVoiceInput(event)" style="padding:6px 12px; background:#334155; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:6px;">
-            <i class="fas fa-microphone"></i> Record Minutes
-          </button>
-          <div class="word-count" id="momCount">0 / 30 words minimum</div>
+        <label>Enter Password *</label>
+        <div style="position:relative; width:100%;">
+          <input type="password" id="adminPanelPassword" placeholder="Enter Admin Password" onkeydown="if(event.key==='Enter') verifyAdminPassword()" />
+          <span class="eye-icon" onclick="togglePasswordVisibility('adminPanelPassword', 'admin-pass-eye')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94A3B8;">
+            <i class="fas fa-eye" id="admin-pass-eye"></i>
+          </span>
         </div>
       </div>
       <div class="modal-btns">
-        <button class="btn btn-secondary" onclick="closeMomModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitMom()">Submit & Complete</button>
+        <button class="btn btn-secondary" onclick="closeAdminPasswordModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="verifyAdminPassword()">Verify</button>
       </div>
     </div>
   </div>
-  <!-- Cancel Reason Modal -->
-  <div class="modal-overlay" id="cancelReasonModal">
-    <div class="modal" style="width:450px">
-      <h3>Cancel Meeting</h3>
-      <div class="error-msg" id="cancelReasonError"></div>
-      <div class="form-group">
-        <label>Reason for Cancellation *</label>
-        <textarea id="cancelReasonText" placeholder="Why are you cancelling this meeting?"></textarea>
-      </div>
-      <div class="modal-btns">
-        <button class="btn btn-secondary" onclick="closeCancelReasonModal()">Back</button>
-        <button class="btn btn-cancel" onclick="submitCancelReason()">Confirm Cancel</button>
-      </div>
-    </div>
-  </div>
-  <!-- Reschedule Modal -->
-  <div class="modal-overlay" id="rescheduleModal">
-    <div class="modal" style="width:450px">
-      <h3>Reschedule Meeting</h3>
-      <div class="error-msg" id="rescheduleError"></div>
-      <div class="form-group">
-        <label>New Date</label>
-        <input type="date" id="rescheduleDate" />
-      </div>
-      <div class="form-group">
-        <label>New Start Time</label>
-        <input type="time" id="rescheduleStart" />
-      </div>
-      <div class="form-group">
-        <label>New End Time</label>
-        <input type="time" id="rescheduleEnd" />
-      </div>
-      <div class="form-group">
-        <label>Reason for Reschedule</label>
-        <textarea id="rescheduleReason" placeholder="Why are you rescheduling this meeting?"></textarea>
-      </div>
-      <div class="modal-btns">
-        <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitReschedule()">Confirm Reschedule</button>
-      </div>
-    </div>
-  </div>
-  <!-- Chat History Modal -->
-  <div class="modal-overlay" id="chatHistoryModal">
-    <div class="modal" style="width:500px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <h3>Chat History</h3>
-        <button class="btn btn-secondary" onclick="closeChatHistory()">Close</button>
-      </div>
-      <input type="date" id="chatHistoryDate" onchange="loadChatHistoryForDate()" style="width:100%; padding:10px; background:#0F172A; border:1px solid #334155; border-radius:8px; color:#F1F5F9; margin-bottom:16px;" />
-      <div id="chatHistoryContainer" style="max-height:400px; overflow-y:auto;"></div>
-    </div>
-  </div>
-  <!-- Daily Report Modal -->
-<div class="modal-overlay" id="dailyReportModal">
-  <div class="modal" style="width:560px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3>📊 Daily Report</h3>
-      <button class="btn btn-secondary" onclick="closeDailyReport()">Close</button>
-    </div>
-    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
-      <input type="date" id="reportDate" style="flex:1;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;" />
-      <button class="btn btn-primary" onclick="generateReport()">Generate</button>
-    </div>
-    <div id="reportContainer" style="max-height:500px;overflow-y:auto;">
-      <p style="color:#94A3B8">Select a date and click Generate.</p>
-    </div>
-  </div>
-</div>
   <!-- Settings Modal -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal" style="width:450px">
       <h3>Settings</h3>
+      <h3>Admin Settings</h3>
       <div class="form-group">
         <label>Gemini API Key</label>
         <div style="position:relative; width:100%;">
           <input type="password" id="settingsApiKey" placeholder="API Key (empty means environment variable)" />
           <span onclick="togglePasswordVisibility('settingsApiKey', 'settings-key-eye')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94A3B8;">
+          <input type="password" id="settingsApiKey" placeholder="API Key" />
+          <span class="eye-icon" onclick="togglePasswordVisibility('settingsApiKey', 'settings-key-eye')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94A3B8;">
             <i class="fas fa-eye" id="settings-key-eye"></i>
           </span>
         </div>
@@ -344,83 +246,47 @@
     }
     function openSettingsModal() {
       const key = localStorage.getItem('gemini_api_key') || '';
+    function openAdminPasswordModal() {
+      document.getElementById('adminPanelPassword').value = '';
+      document.getElementById('adminPasswordError').style.display = 'none';
+      document.getElementById('adminPasswordModal').classList.add('active');
+    }
+    function closeAdminPasswordModal() {
+      document.getElementById('adminPasswordModal').classList.remove('active');
+    }
+    async function verifyAdminPassword() {
+      const pwd = document.getElementById('adminPanelPassword').value;
+      const errEl = document.getElementById('adminPasswordError');
+      try {
+        const res = await fetch('/api/get-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+        if (!res.ok) {
+          errEl.style.display = 'block';
+          errEl.textContent = 'Wrong password. Try again.';
+          return;
+        }
+        const data = await res.json();
+        const serverKey = data.gemini_api_key || '';
+        closeAdminPasswordModal();
+        openSettingsModal(pwd, serverKey);
+      } catch (e) {
+        console.error(e);
+        errEl.style.display = 'block';
+        errEl.textContent = 'Error connecting to server.';
+      }
+    }
+    function openSettingsModal(pwd, serverKey) {
+      const localKey = localStorage.getItem('gemini_api_key');
+      const keyToDisplay = localKey !== null ? localKey : serverKey;
       const model = localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite';
       document.getElementById('settingsApiKey').value = key;
+      document.getElementById('settingsApiKey').value = keyToDisplay;
       document.getElementById('settingsModel').value = model;
       document.getElementById('settingsModal').classList.add('active');
     }
-    function closeSettingsModal() {
-      document.getElementById('settingsModal').classList.remove('active');
-    }
-    function saveSettings() {
-      const key = document.getElementById('settingsApiKey').value.trim();
-      const model = document.getElementById('settingsModel').value.trim() || 'gemini-3.1-flash-lite';
-      localStorage.setItem('gemini_api_key', key);
-      localStorage.setItem('gemini_model', model);
-      closeSettingsModal();
-      alert('Settings saved successfully!');
-    }
-    async function supabaseFetch(path, method = 'GET', body = null) {
-      const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
-        method,
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': method === 'POST' ? 'return=representation' : ''
-        },
-        body: body ? JSON.stringify(body) : null
-      });
-      const text = await res.text();
-      return text ? JSON.parse(text) : {};
-    }
-    async function loadSlots(dateStr) {
-      const data = await supabaseFetch('schedules?date=eq.' + dateStr + '&order=start_time');
-      renderSlots(data);
-      loadStatusCounts();
-    }
-    async function loadStatusCounts() {
-      const completed = await supabaseFetch('schedules?status=eq.completed&select=id');
-      const rescheduled = await supabaseFetch('schedules?status=eq.rescheduled&select=id');
-      const cancelled = await supabaseFetch('schedules?status=eq.cancelled&select=id');
-      document.getElementById('countCompleted').textContent = completed.length || 0;
-      document.getElementById('countRescheduled').textContent = rescheduled.length || 0;
-      document.getElementById('countCancelled').textContent = cancelled.length || 0;
-    }
-    function toIST(timeStr) { return timeStr ? timeStr.slice(0,5) : ''; }
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-    function toggleReason(id) {
-      const box = document.getElementById('reason-' + id);
-      if (box) box.classList.toggle('active');
-    }
-    function toggleMom(id) {
-      const box = document.getElementById('mom-' + id);
-      if (box) box.classList.toggle('active');
-    }
-    function toggleRescheduleReason(id) {
-      const box = document.getElementById('reschedule-reason-' + id);
-      if (box) box.classList.toggle('active');
-    }
-    function toggleCancelReason(id) {
-      const box = document.getElementById('cancel-reason-' + id);
-      if (box) box.classList.toggle('active');
-    }
-    function renderSlots(slots) {
-      const container = document.getElementById('slotsContainer');
-      if (!slots || !slots.length) { container.innerHTML = '<p style="color:#94A3B8">No slots for this date.</p>'; return; }
-      container.innerHTML = slots.map(s => {
-        const cleanDesc = (s.description || '').replace(/\s*\(Booked by Owner\)/g, '').replace(/\s*\(Booked via AI by Owner\)/g, '').replace(/\s*\(Booked by Visitor - [^\)]+\)/g, '');
-        return `
-        <div class="slot-card ${s.status}">
-          <div class="slot-title-row">
-            <div class="slot-title">
-              ${s.title}
-              <span style="font-weight:normal; font-size:12px; color:#94A3B8; margin-left:6px;">
-                (${s.created_by === 'owner' ? 'Booked by Owner' : 'Booked by Visitor'})
-              </span>
             </div>
             <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Agenda</button>
           </div>
@@ -716,13 +582,27 @@
       }
       const rec = new SpeechRecognition();
       rec.lang = lang;
+      rec.continuous = true;
       rec.interimResults = false;
       rec.maxAlternatives = 1;
+      
       rec.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
         document.getElementById('chatInput').value = transcript;
         lastDetectedLang = detectLanguage(transcript);
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          }
+        }
+        if (finalTranscript) {
+          const input = document.getElementById('chatInput');
+          input.value = (input.value.trim() + ' ' + finalTranscript).trim();
+          lastDetectedLang = detectLanguage(input.value);
+        }
       };
+      
       rec.onerror = function(event) {
         console.log('Speech recognition error:', event.error);
         isListening = false;
@@ -730,6 +610,7 @@
         micBtn.style.background = '#334155';
         micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       };
+      
       rec.onend = function() {
         isListening = false;
         const micBtn = document.getElementById('micBtn');
@@ -742,9 +623,14 @@
       const micBtn = document.getElementById('micBtn');
       if (isListening) {
         if (recognition) recognition.stop();
+        if (recognition) {
+          recognition.onend = null;
+          recognition.stop();
+        }
         isListening = false;
         micBtn.style.background = '#334155';
         micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        sendMessage();
         return;
       }
       recognition = initRecognition('en-IN');
@@ -752,6 +638,8 @@
       isListening = true;
       micBtn.style.background = '#EF4444';
       micBtn.innerHTML = '<i class="fas fa-stop"></i>';
+      micBtn.style.background = '#22C55E';
+      micBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
       try {
         recognition.start();
       } catch (e) {
@@ -1030,6 +918,9 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
     async function loadPendingCount() {
       const data = await supabaseFetch('booking_requests?status=eq.pending&select=id');
       document.getElementById('badge').textContent = data.length || 0;
+      const withdrawReqs = await supabaseFetch('booking_requests?status=eq.withdraw_requested&select=id');
+      const totalPending = (data.length || 0) + (withdrawReqs.length || 0);
+      document.getElementById('badge').textContent = totalPending || 0;
     }
     function openRequestsDrawer() {
       document.getElementById('requestsDrawer').classList.add('active');
@@ -1044,10 +935,34 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
       const data = await supabaseFetch('booking_requests?order=created_at.desc');
       if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No requests yet.</p>'; return; }
       container.innerHTML = data.map(r => `
+      container.innerHTML = data.map(r => {
+        let actionButtonsHtml = '';
+        if (r.status === 'pending') {
+          actionButtonsHtml = `
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="showActionConfirm('accept','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}','${(r.description||'').replace(/'/g,"&#39;")}')">Accept</button>
+              <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="showActionConfirm('reschedule','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Request Reschedule</button>
+              <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="showActionConfirm('decline','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Decline</button>
+            </div>
+          `;
+        } else if (r.status === 'withdraw_requested') {
+          actionButtonsHtml = `
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" style="font-size:12px;padding:6px 12px;background:#22C55E;color:white;" onclick="showWithdrawConfirm('accept_withdraw','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Accept Withdraw</button>
+              <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white;" onclick="showWithdrawConfirm('decline_withdraw','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Decline Withdraw</button>
+            </div>
+          `;
+        } else {
+          actionButtonsHtml = `<div style="font-size:12px;color:#94A3B8">Remarks: ${r.owner_remarks || '—'}</div>`;
+        }
+        return `
         <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:12px">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px">
             <span style="font-weight:bold">${r.visitor_name}</span>
             <span style="color:#94A3B8;font-size:11px">${r.status.replace(/_/g,' ')}</span>
+            <span style="color:${r.status === 'withdraw_requested' ? '#F97316' : '#94A3B8'};font-size:11px;font-weight:bold;">
+              ${r.status === 'withdraw_requested' ? 'WITHDRAW REQUESTED' : r.status.replace(/_/g,' ').toUpperCase()}
+            </span>
           </div>
           <div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${r.visitor_email}</div>
           <div style="font-size:13px;margin-bottom:4px">${r.requested_date} | ${r.start_time.slice(0,5)} — ${r.end_time.slice(0,5)}</div>
@@ -1059,9 +974,47 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
               <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="showActionConfirm('reschedule','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Request Reschedule</button>
               <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="showActionConfirm('decline','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Decline</button>
             </div>` : `<div style="font-size:12px;color:#94A3B8">Remarks: ${r.owner_remarks || '—'}</div>`}
+            ${actionButtonsHtml}
           </div>
         </div>
       `).join('');
+        `;
+      }).join('');
+    }
+    function showWithdrawConfirm(action, id, email, date, start, end, name) {
+      const container = document.getElementById('actions-container-' + id);
+      const actionTitles = { accept_withdraw: 'Accept Withdraw', decline_withdraw: 'Decline Withdraw' };
+      const btnClasses = { accept_withdraw: 'btn-primary', decline_withdraw: 'btn-cancel' };
+      
+      container.innerHTML = `
+        <div style="display:flex; gap:8px; align-items:center; width:100%;">
+          <span style="font-size:12px; color:#F1F5F9; font-weight:bold;">${actionTitles[action]}:</span>
+          <button class="btn ${btnClasses[action]}" style="font-size:12px; padding:6px 12px;" onclick="submitWithdrawAction('${action}', '${id}', '${email}', '${date}', '${start}', '${end}', '${name}')">Send</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="openRemarks('${action}', '${id}', '${email}', '${date}', '${start}', '${end}', '${name}')">Remarks (Optional)</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px; background:transparent; border:1px solid #334155;" onclick="resetWithdrawButtons('${id}', '${email}', '${date}', '${start}', '${end}', '${name}')">Cancel</button>
+        </div>
+      `;
+    }
+    function resetWithdrawButtons(id, email, date, start, end, name) {
+      const container = document.getElementById('actions-container-' + id);
+      container.innerHTML = `
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" style="font-size:12px;padding:6px 12px;background:#22C55E;color:white;" onclick="showWithdrawConfirm('accept_withdraw','${id}','${email}','${date}','${start}','${end}','${name}')">Accept Withdraw</button>
+          <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white;" onclick="showWithdrawConfirm('decline_withdraw','${id}','${email}','${date}','${start}','${end}','${name}')">Decline Withdraw</button>
+        </div>
+      `;
+    }
+    async function submitWithdrawAction(action, id, email, date, start, end, name) {
+      currentRemarkAction = action;
+      currentRemarkRequestId = id;
+      currentRemarkEmail = email;
+      currentRemarkDate = date;
+      currentRemarkStart = start;
+      currentRemarkEnd = end;
+      currentRemarkName = name;
+      currentRemarkDesc = '';
+      document.getElementById('remarksText').value = '';
+      await submitRemarks();
     }
     function showActionConfirm(action, id, email, date, start, end, name, desc) {
       const container = document.getElementById('actions-container-' + id);
@@ -1107,6 +1060,7 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
       currentRemarkName = name;
       currentRemarkDesc = desc || '';
       const titles = { 'accept_remarks': 'Accept Meeting', 'reschedule': 'Request Reschedule', 'decline': 'Decline Request' };
+      const titles = { 'accept_remarks': 'Accept Meeting', 'reschedule': 'Request Reschedule', 'decline': 'Decline Request', 'accept_withdraw': 'Accept Withdraw', 'decline_withdraw': 'Decline Withdraw' };
       document.getElementById('remarksTitle').textContent = titles[action];
       document.getElementById('remarksText').value = '';
       document.getElementById('remarksModal').classList.add('active');
@@ -1164,10 +1118,29 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           requested_date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
           description: 'Request declined' + (remarks ? '. Reason: ' + remarks : '.')
         });
+      } else if (currentRemarkAction === 'accept_withdraw') {
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'withdrawn', owner_remarks: remarks });
+        const schedules = await supabaseFetch('schedules?date=eq.' + currentRemarkDate + '&start_time=eq.' + currentRemarkStart + '&end_time=eq.' + currentRemarkEnd + '&visitor_email=eq.' + encodeURIComponent(currentRemarkEmail) + '&status=neq.cancelled');
+        if (schedules.length > 0) {
+          await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'Withdrawn by visitor' });
+        }
+        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+          visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
+          requested_date: currentRemarkDate, start_time: currentRemarkStart.slice(0,5), end_time: currentRemarkEnd.slice(0,5),
+          description: remarks ? ('Your withdraw request was accepted. Remarks: ' + remarks) : 'Your withdraw request has been accepted. The meeting is cancelled.'
+        });
+      } else if (currentRemarkAction === 'decline_withdraw') {
+        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'accepted', owner_remarks: remarks });
+        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+          visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
+          requested_date: currentRemarkDate, start_time: currentRemarkStart.slice(0,5), end_time: currentRemarkEnd.slice(0,5),
+          description: remarks ? ('Your withdraw request was declined. Remarks: ' + remarks) : 'Your withdraw request was declined. The meeting remains scheduled.'
+        });
       }
       closeRemarksModal();
       loadRequests();
       loadPendingCount();
+      reloadSlots();
     }
     function openDailyReport() {
   const today = new Date();
