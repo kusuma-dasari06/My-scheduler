@@ -1248,7 +1248,6 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
       currentRemarkEnd = end;
       currentRemarkName = name;
       currentRemarkDesc = desc || '';
-      const titles = { 'accept_remarks': 'Accept Meeting', 'reschedule': 'Request Reschedule', 'decline': 'Decline Request' };
       const titles = { 'accept_remarks': 'Accept Meeting', 'reschedule': 'Request Reschedule', 'decline': 'Decline Request', 'accept_withdraw': 'Accept Withdraw', 'decline_withdraw': 'Decline Withdraw' };
       document.getElementById('remarksTitle').textContent = titles[action];
       document.getElementById('remarksText').value = '';
