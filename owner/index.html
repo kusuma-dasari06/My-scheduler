@@ -556,61 +556,77 @@ document.addEventListener('click', function(e) {
     }
     let momRecognition = null;
     let isMomListening = false;
-    function toggleMomVoiceInput(e) {
-      if (e) e.preventDefault();
-      const btn = document.getElementById('momVoiceBtn');
-      if (isMomListening) {
-        if (momRecognition) momRecognition.stop();
-        isMomListening = false;
-        btn.style.background = '#334155';
-        btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
-        return;
-      }
-      
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
-        return;
-      }
-      
-      momRecognition = new SpeechRecognition();
-      momRecognition.lang = 'en-IN';
-      momRecognition.interimResults = false;
-      momRecognition.maxAlternatives = 1;
-      
-      momRecognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        const textarea = document.getElementById('momText');
-        textarea.value = (textarea.value.trim() + ' ' + transcript).trim();
-        updateMomCount();
-      };
-      
-      momRecognition.onerror = function(event) {
-        console.log('Mom Speech recognition error:', event.error);
-        isMomListening = false;
-        btn.style.background = '#334155';
-        btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
-      };
-      
-      momRecognition.onend = function() {
-        isMomListening = false;
-        btn.style.background = '#334155';
-        btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
-      };
-      
-      isMomListening = true;
-      btn.style.background = '#EF4444';
-      btn.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
-      
-      try {
-        momRecognition.start();
-      } catch(err) {
-        console.log('Mom Speech start error:', err);
-        isMomListening = false;
-        btn.style.background = '#334155';
-        btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
+    function initMomRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+    return null;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = 'en-IN';
+  rec.continuous = true;
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+
+  rec.onresult = function(event) {
+    let finalTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript + ' ';
       }
     }
+    if (finalTranscript) {
+      const textarea = document.getElementById('momText');
+      textarea.value = (textarea.value.trim() + ' ' + finalTranscript).trim();
+      updateMomCount();
+    }
+  };
+
+  rec.onerror = function(event) {
+    console.log('Mom Speech recognition error:', event.error);
+    resetMomVoiceButton();
+  };
+
+  rec.onend = function() {
+    resetMomVoiceButton();
+  };
+  return rec;
+}
+
+function resetMomVoiceButton() {
+  isMomListening = false;
+  const btn = document.getElementById('momVoiceBtn');
+  btn.style.background = '#334155';
+  btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
+}
+
+function toggleMomVoiceInput(e) {
+  if (e) e.preventDefault();
+  const btn = document.getElementById('momVoiceBtn');
+
+  if (isMomListening) {
+    if (momRecognition) {
+      momRecognition.onend = null;
+      momRecognition.stop();
+    }
+    resetMomVoiceButton();
+    return;
+  }
+
+  momRecognition = initMomRecognition();
+  if (!momRecognition) return;
+
+  isMomListening = true;
+  btn.style.background = '#22C55E';
+  btn.innerHTML = '<i class="fas fa-paper-plane"></i> Stop';
+
+  try {
+    momRecognition.start();
+  } catch (err) {
+    console.log('Mom Speech start error:', err);
+    resetMomVoiceButton();
+  }
+}
     async function submitMom() {
       const text = document.getElementById('momText').value.trim();
       const words = text.split(/\s+/).filter(w => w.length > 0).length;
