@@ -366,8 +366,6 @@
         eye.className = 'fas fa-eye';
       }
     }
-    function openSettingsModal() {
-      const key = localStorage.getItem('gemini_api_key') || '';
     function openAdminPasswordModal() {
       document.getElementById('adminPanelPassword').value = '';
       document.getElementById('adminPasswordError').style.display = 'none';
@@ -404,7 +402,6 @@
       const localKey = localStorage.getItem('gemini_api_key');
       const keyToDisplay = localKey !== null ? localKey : serverKey;
       const model = localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite';
-      document.getElementById('settingsApiKey').value = key;
       document.getElementById('settingsApiKey').value = keyToDisplay;
       document.getElementById('settingsModel').value = model;
       document.getElementById('settingsModal').classList.add('active');
@@ -1128,7 +1125,6 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
       container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
       const data = await supabaseFetch('booking_requests?order=created_at.desc');
       if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No requests yet.</p>'; return; }
-      container.innerHTML = data.map(r => `
       container.innerHTML = data.map(r => {
         let actionButtonsHtml = '';
         if (r.status === 'pending') {
@@ -1171,7 +1167,6 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
             ${actionButtonsHtml}
           </div>
         </div>
-      `).join('');
         `;
       }).join('');
     }
