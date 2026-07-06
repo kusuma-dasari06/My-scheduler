@@ -581,8 +581,33 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
       `;
       }).join('');
     }
-    async function withdrawRequest(id, date, start, end, email, name) {
     async function directWithdraw(id) {
+      if (!confirm('Are you sure you want to withdraw this meeting request?')) return;
+      try {
+        const reqData = await supabaseFetch('booking_requests?id=eq.' + id);
+        if (!reqData.length) { alert('Request not found.'); return; }
+        const r = reqData[0];
+        await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
+        const schedules = await supabaseFetch('schedules?date=eq.' + r.requested_date + '&start_time=eq.' + r.start_time + '&end_time=eq.' + r.end_time + '&visitor_email=eq.' + encodeURIComponent(r.visitor_email) + '&status=neq.cancelled');
+        if (schedules.length > 0) {
+          await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'Withdrawn by visitor' });
+        }
+        emailjs.send('service_88v685e', 'template_e4ekmie', {
+          visitor_name: r.visitor_name, visitor_email: r.visitor_email, requested_date: r.requested_date,
+          start_time: r.start_time.slice(0,5), end_time: r.end_time.slice(0,5),
+          description: 'The visitor has withdrawn their meeting request.'
+        });
+        alert('Your request has been successfully withdrawn.');
+        loadPastBookings();
+        if (selectedDate) {
+          selectDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+        }
+      } catch (e) {
+        console.error('Withdraw failed:', e);
+        alert('Failed to withdraw request.');
+      }
+    }
+    async function withdrawRequest(id, date, start, end, email, name) {
       if (!confirm('Are you sure you want to withdraw this meeting request?')) return;
       try {
         await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
@@ -769,22 +794,8 @@ STRICT RULES:
         container.scrollTop = container.scrollHeight;
       }
     }
-    function startVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert('Your browser does not support voice input. Please use Chrome.');
-    return;
-  }
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'en-IN';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  const btn = document.getElementById('voiceBtn');
-  btn.innerHTML = '<i class="fas fa-stop"></i>';
-  btn.style.background = '#EF4444';
     let isVisitorListening = false;
     let visitorRecognition = null;
-  recognition.start();
     function startVoice() {
       const btn = document.getElementById('voiceBtn');
       if (isVisitorListening) {
@@ -798,23 +809,23 @@ STRICT RULES:
         sendMessage();
         return;
       }
-      
+
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         alert('Your browser does not support voice input. Please use Chrome.');
         return;
       }
-      
+
       visitorRecognition = new SpeechRecognition();
       visitorRecognition.lang = 'en-IN';
       visitorRecognition.continuous = true;
       visitorRecognition.interimResults = false;
       visitorRecognition.maxAlternatives = 1;
-      
+
       btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
       btn.style.background = '#22C55E';
       isVisitorListening = true;
-      
+
       visitorRecognition.onresult = (event) => {
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -827,19 +838,19 @@ STRICT RULES:
           input.value = (input.value.trim() + ' ' + finalTranscript).trim();
         }
       };
-      
+
       visitorRecognition.onerror = () => {
         isVisitorListening = false;
         btn.innerHTML = '<i class="fas fa-microphone"></i>';
         btn.style.background = '#334155';
       };
-      
+
       visitorRecognition.onend = () => {
         isVisitorListening = false;
         btn.innerHTML = '<i class="fas fa-microphone"></i>';
         btn.style.background = '#334155';
       };
-      
+
       try {
         visitorRecognition.start();
       } catch(e) {
@@ -849,16 +860,6 @@ STRICT RULES:
         btn.style.background = '#334155';
       }
     }
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    document.getElementById('chatInput').value = transcript;
-    btn.innerHTML = '<i class="fas fa-microphone"></i>';
-    btn.style.background = '#334155';
-  };
-  recognition.onerror = () => {
-    btn.innerHTML = '<i class="fas fa-microphone"></i>';
-    btn.style.background = '#334155';
-  };
   recognition.onend = () => {
     btn.innerHTML = '<i class="fas fa-microphone"></i>';
     btn.style.background = '#334155';
