@@ -481,7 +481,6 @@
             </div>
             <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Agenda</button>
           </div>
-          <div style="font-size:13px; color:#CBD5E1; margin: 4px 0 8px 0;">Reason: ${escapeHtml(cleanDesc) || 'No reason provided.'}</div>
           <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(cleanDesc) || 'No reason provided.'}</div>
           <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${s.minutes_of_meeting ? escapeHtml(s.minutes_of_meeting).replace(/\|/g, '\n') : 'No minutes recorded.'}</div>
           <div class="slot-reason-box" id="reschedule-reason-${s.id}">${escapeHtml(s.reschedule_reason) || 'No reason provided.'}</div>
