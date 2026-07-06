@@ -1128,7 +1128,7 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
       container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
       const data = await supabaseFetch('booking_requests?order=created_at.desc');
       if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No requests yet.</p>'; return; }
-
+      container.innerHTML = data.map(r => `
       container.innerHTML = data.map(r => {
         let actionButtonsHtml = '';
         if (r.status === 'pending') {
@@ -1171,6 +1171,8 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
             ${actionButtonsHtml}
           </div>
         </div>
+      `).join('');
+        `;
       }).join('');
     }
     function showWithdrawConfirm(action, id, email, date, start, end, name) {
