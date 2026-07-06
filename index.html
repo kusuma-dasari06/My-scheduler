@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <title>MyScheduler</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,15 +25,28 @@
     }
     h1 { color: #F1F5F9; font-size: 28px; margin-bottom: 8px; }
     p { color: #94A3B8; margin-bottom: 24px; }
+    .input-container {
+      position: relative;
+      width: 100%;
+      margin-bottom: 16px;
+    }
     input {
       width: 100%;
       padding: 12px;
+      padding-right: 40px;
       background: #0F172A;
       border: 1px solid #334155;
       border-radius: 8px;
       color: #F1F5F9;
       font-size: 16px;
-      margin-bottom: 16px;
+    }
+    .eye-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #94A3B8;
     }
     button {
       width: 100%;
@@ -51,12 +65,27 @@
   <div class="card">
     <h1>MyScheduler</h1>
     <p>Enter your password to continue</p>
-    <input type="password" id="password" placeholder="Password" />
+    <div class="input-container">
+      <input type="password" id="password" placeholder="Password" onkeydown="if(event.key==='Enter') login()" />
+      <span class="eye-icon" onclick="togglePasswordVisibility('password', 'password-eye')">
+        <i class="fas fa-eye" id="password-eye"></i>
+      </span>
+    </div>
     <button onclick="login()">Login</button>
     <p class="error" id="error">Wrong password. Try again.</p>
   </div>
-
   <script>
+    function togglePasswordVisibility(inputId, eyeId) {
+      const input = document.getElementById(inputId);
+      const eye = document.getElementById(eyeId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.className = 'fas fa-eye-slash';
+      } else {
+        input.type = 'password';
+        eye.className = 'fas fa-eye';
+      }
+    }
     function login() {
       const pwd = document.getElementById('password').value;
       if (pwd === 'myscheduler123') {

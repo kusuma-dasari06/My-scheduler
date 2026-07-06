@@ -32,7 +32,7 @@
     .slot-card { background: #1E2938; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 4px solid #6366F1; }
     .slot-card.completed { border-left-color: #22C55E; opacity: 0.7; }
     .slot-card.cancelled { border-left-color: #EF4444; opacity: 0.7; }
-    .slot-card.rescheduled { border-left-color: #F59E0B; }
+    .slot-card.rescheduled { border-left-color: #F97316; }
     .slot-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
     .slot-title { font-weight: bold; }
     .btn-reason { background: #334155; color: #94A3B8; border: none; padding: 2px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; white-space: nowrap; }
@@ -45,14 +45,14 @@
     .slot-actions button { padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; }
     .btn-complete { background: #22C55E; color: white; }
     .btn-edit { background: #3B82F6; color: white; }
-    .btn-reschedule { background: #F59E0B; color: white; }
+    .btn-reschedule { background: #F97316; color: white; }
     .btn-cancel { background: #EF4444; color: white; }
     .status-counts { display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #334155; }
     .count-item { text-align: center; flex: 1; }
     .count-num { font-size: 24px; font-weight: bold; }
     .count-label { font-size: 11px; color: #94A3B8; }
     .count-item.completed .count-num { color: #22C55E; }
-    .count-item.rescheduled .count-num { color: #F59E0B; }
+    .count-item.rescheduled .count-num { color: #F97316; }
     .count-item.cancelled .count-num { color: #EF4444; }
     .chat-messages { height: calc(100vh - 220px); overflow-y: auto; margin-bottom: 12px; }
     .message { margin-bottom: 12px; display: flex; flex-direction: column; }
@@ -84,10 +84,10 @@
     <h1>MyScheduler</h1>
     <div class="header-btns">
       <button class="btn btn-secondary" onclick="openDailyReport()">📊 Daily Report</button>
+      <button class="btn btn-secondary" onclick="openSettingsModal()">⚙️ Settings</button>
       <button class="btn btn-secondary" onclick="copyBookingLink()">Copy Booking Link</button>
       <button class="btn btn-secondary" onclick="openRequestsDrawer()">Requests <span class="badge" id="badge">0</span></button>
       <button class="btn btn-primary" onclick="openAddSlot()">+ Add to Schedule</button>
-      <button class="btn btn-secondary" onclick="openAdminPanel()">⚙️ Admin</button>
     </div>
   </div>
   <div class="layout">
@@ -120,10 +120,8 @@
         <button id="micBtn" onclick="toggleVoiceInput()" style="background:#334155;color:#F1F5F9;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:16px;"><i class="fas fa-microphone"></i></button>
         <button onclick="sendMessage()">Send</button>
       </div>
-      </div>
     </div>
   </div>
-
   <!-- MoM Modal -->
   <div class="modal-overlay" id="momModal">
     <div class="modal" style="width:450px">
@@ -132,7 +130,12 @@
       <div class="form-group">
         <label>Enter Minutes of Meeting (minimum 30 words) *</label>
         <textarea id="momText" oninput="updateMomCount()" style="height:160px" placeholder="Describe the meeting minutes here..."></textarea>
-        <div class="word-count" id="momCount">0 / 30 words minimum</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+          <button id="momVoiceBtn" onclick="toggleMomVoiceInput(event)" style="padding:6px 12px; background:#334155; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-microphone"></i> Record Minutes
+          </button>
+          <div class="word-count" id="momCount">0 / 30 words minimum</div>
+        </div>
       </div>
       <div class="modal-btns">
         <button class="btn btn-secondary" onclick="closeMomModal()">Cancel</button>
@@ -140,7 +143,6 @@
       </div>
     </div>
   </div>
-
   <!-- Cancel Reason Modal -->
   <div class="modal-overlay" id="cancelReasonModal">
     <div class="modal" style="width:450px">
@@ -156,7 +158,6 @@
       </div>
     </div>
   </div>
-
   <!-- Reschedule Modal -->
   <div class="modal-overlay" id="rescheduleModal">
     <div class="modal" style="width:450px">
@@ -184,7 +185,6 @@
       </div>
     </div>
   </div>
-
   <!-- Chat History Modal -->
   <div class="modal-overlay" id="chatHistoryModal">
     <div class="modal" style="width:500px">
@@ -196,7 +196,6 @@
       <div id="chatHistoryContainer" style="max-height:400px; overflow-y:auto;"></div>
     </div>
   </div>
-
   <!-- Daily Report Modal -->
 <div class="modal-overlay" id="dailyReportModal">
   <div class="modal" style="width:560px">
@@ -213,6 +212,36 @@
     </div>
   </div>
 </div>
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal" style="width:450px">
+      <h3>Settings</h3>
+      <div class="form-group">
+        <label>Gemini API Key</label>
+        <div style="position:relative; width:100%;">
+          <input type="password" id="settingsApiKey" placeholder="API Key (empty means environment variable)" />
+          <span onclick="togglePasswordVisibility('settingsApiKey', 'settings-key-eye')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94A3B8;">
+            <i class="fas fa-eye" id="settings-key-eye"></i>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Gemini Model</label>
+        <input type="text" id="settingsModel" list="modelList" placeholder="e.g. gemini-3.1-flash-lite" />
+        <datalist id="modelList">
+          <option value="gemini-3.1-flash-lite"></option>
+          <option value="gemini-2.0-flash"></option>
+          <option value="gemini-2.5-flash"></option>
+          <option value="gemini-1.5-flash"></option>
+          <option value="gemini-1.5-pro"></option>
+        </datalist>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeSettingsModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
   <!-- Add Slot Modal -->
   <div class="modal-overlay" id="addSlotModal">
     <div class="modal">
@@ -245,9 +274,8 @@
         <input type="time" id="slotEnd" min="05:00" max="23:00" />
       </div>
       <div class="form-group">
-        <label>Description (min 25 words)</label>
-        <textarea id="slotDesc" oninput="updateWordCount()" placeholder="Describe this slot..."></textarea>
-        <div class="word-count" id="wordCount">0 / 25 words minimum</div>
+        <label>Description</label>
+        <textarea id="slotDesc" placeholder="Describe this slot..."></textarea>
       </div>
       <div class="modal-btns">
         <button class="btn btn-secondary" onclick="closeAddSlot()">Cancel</button>
@@ -255,7 +283,6 @@
       </div>
     </div>
   </div>
-
   <!-- Requests Drawer -->
   <div class="modal-overlay" id="requestsDrawer">
     <div class="modal" style="width:560px">
@@ -266,7 +293,6 @@
       <div id="requestsContainer"><p style="color:#94A3B8">Loading...</p></div>
     </div>
   </div>
-
   <!-- Remarks Modal -->
   <div class="modal-overlay" id="remarksModal">
     <div class="modal" style="width:400px">
@@ -281,96 +307,14 @@
       </div>
     </div>
   </div>
-<!-- Admin Panel Modal -->  
-  <div class="modal-overlay" id="adminModal">  
-    <div class="modal" style="max-width:500px;">  
-      <h3 style="margin-bottom:16px;">⚙️ Admin Panel</h3>  
-  
-      <div id="adminLoginSection">  
-        <label style="display:block;margin-bottom:8px;">Owner Password</label>  
-        <input type="password" id="adminPassword" placeholder="Enter password"  
-          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;" />  
-        <div style="display:flex;gap:8px;justify-content:flex-end;">  
-          <button class="btn btn-secondary" onclick="closeAdminPanel()">Cancel</button>  
-          <button class="btn btn-primary" onclick="adminLogin()">Login</button>  
-        </div>  
-      </div>  
-  
-      <div id="adminSettingsSection" style="display:none;">  
-        <label style="display:block;margin-bottom:8px;">Gemini API Key</label>  
-        <div id="currentKeyDisplay" style="font-size:12px;color:#94A3B8;margin-bottom:6px;"></div>  
-        <input type="text" id="newApiKey" placeholder="New API key (leave blank to keep current)"  
-          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;" />  
-  
-        <label style="display:block;margin-bottom:8px;">Gemini Model</label>  
-        <select id="newModel"  
-          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;">  
-          <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>  
-          <option value="gemini-2.5-flash">gemini-2.5-flash</option>  
-          <option value="gemini-2.5-pro">gemini-2.5-pro</option>  
-          <option value="gemini-2.0-flash">gemini-2.0-flash</option>  
-          <option value="gemini-1.5-flash">gemini-1.5-flash</option>  
-          <option value="gemini-1.5-pro">gemini-1.5-pro</option>  
-        </select>  
-  
-        <div id="adminMsg" style="font-size:13px;margin-bottom:12px;"></div>  
-        <div style="display:flex;gap:8px;justify-content:flex-end;">  
-          <button class="btn btn-secondary" onclick="closeAdminPanel()">Close</button>  
-          <button class="btn btn-primary" onclick="saveAdminSettings()">Save</button>  
-        </div>  
-      </div>  
-    </div>  
-  </div>
-      <!-- Admin Panel Modal -->  
-  <div class="modal-overlay" id="adminModal">  
-    <div class="modal" style="max-width:500px;">  
-      <h3 style="margin-bottom:16px;">⚙️ Admin Panel</h3>  
-  
-      <div id="adminLoginSection">  
-        <label style="display:block;margin-bottom:8px;">Owner Password</label>  
-        <input type="password" id="adminPassword" placeholder="Enter password"  
-          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;" />  
-        <div style="display:flex;gap:8px;justify-content:flex-end;">  
-          <button class="btn btn-secondary" onclick="closeAdminPanel()">Cancel</button>  
-          <button class="btn btn-primary" onclick="adminLogin()">Login</button>  
-        </div>  
-      </div>  
-  
-      <div id="adminSettingsSection" style="display:none;">  
-        <label style="display:block;margin-bottom:8px;">Gemini API Key</label>  
-        <div id="currentKeyDisplay" style="font-size:12px;color:#94A3B8;margin-bottom:6px;"></div>  
-        <input type="text" id="newApiKey" placeholder="New API key (leave blank to keep current)"  
-          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;" />  
-  
-        <label style="display:block;margin-bottom:8px;">Gemini Model</label>  
-        <select id="newModel"  
-          style="width:100%;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;margin-bottom:16px;">  
-          <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>  
-          <option value="gemini-2.5-flash">gemini-2.5-flash</option>  
-          <option value="gemini-2.5-pro">gemini-2.5-pro</option>  
-          <option value="gemini-2.0-flash">gemini-2.0-flash</option>  
-          <option value="gemini-1.5-flash">gemini-1.5-flash</option>  
-          <option value="gemini-1.5-pro">gemini-1.5-pro</option>  
-        </select>  
-  
-        <div id="adminMsg" style="font-size:13px;margin-bottom:12px;"></div>  
-        <div style="display:flex;gap:8px;justify-content:flex-end;">  
-          <button class="btn btn-secondary" onclick="closeAdminPanel()">Close</button>  
-          <button class="btn btn-primary" onclick="saveAdminSettings()">Save</button>  
-        </div>  
-      </div>  
-    </div>  
-  </div>
   <script>
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
     const EMAILJS_SERVICE = 'service_88v685e';
     const EMAILJS_PUBLIC = 'o0EwTVp7WtONi-e8k';
     const TEMPLATE_VISITOR = 'template_u0x07ob';
-
     if (!sessionStorage.getItem('auth')) window.location.href = '/';
     emailjs.init(EMAILJS_PUBLIC);
-
     let currentDate = new Date();
     let selectedDate = null;
     let chatHistory = [];
@@ -387,7 +331,35 @@
     let currentCancelSlotId = null;
     let currentCancelVisitorEmail = null;
     let currentCancelVisitorName = null;
-
+    function togglePasswordVisibility(inputId, eyeId) {
+      const input = document.getElementById(inputId);
+      const eye = document.getElementById(eyeId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.className = 'fas fa-eye-slash';
+      } else {
+        input.type = 'password';
+        eye.className = 'fas fa-eye';
+      }
+    }
+    function openSettingsModal() {
+      const key = localStorage.getItem('gemini_api_key') || '';
+      const model = localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite';
+      document.getElementById('settingsApiKey').value = key;
+      document.getElementById('settingsModel').value = model;
+      document.getElementById('settingsModal').classList.add('active');
+    }
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('active');
+    }
+    function saveSettings() {
+      const key = document.getElementById('settingsApiKey').value.trim();
+      const model = document.getElementById('settingsModel').value.trim() || 'gemini-3.1-flash-lite';
+      localStorage.setItem('gemini_api_key', key);
+      localStorage.setItem('gemini_model', model);
+      closeSettingsModal();
+      alert('Settings saved successfully!');
+    }
     async function supabaseFetch(path, method = 'GET', body = null) {
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
         method,
@@ -402,13 +374,11 @@
       const text = await res.text();
       return text ? JSON.parse(text) : {};
     }
-
     async function loadSlots(dateStr) {
       const data = await supabaseFetch('schedules?date=eq.' + dateStr + '&order=start_time');
       renderSlots(data);
       loadStatusCounts();
     }
-
     async function loadStatusCounts() {
       const completed = await supabaseFetch('schedules?status=eq.completed&select=id');
       const rescheduled = await supabaseFetch('schedules?status=eq.rescheduled&select=id');
@@ -417,14 +387,11 @@
       document.getElementById('countRescheduled').textContent = rescheduled.length || 0;
       document.getElementById('countCancelled').textContent = cancelled.length || 0;
     }
-
     function toIST(timeStr) { return timeStr ? timeStr.slice(0,5) : ''; }
-
     function escapeHtml(str) {
       if (!str) return '';
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
-
     function toggleReason(id) {
       const box = document.getElementById('reason-' + id);
       if (box) box.classList.toggle('active');
@@ -441,17 +408,24 @@
       const box = document.getElementById('cancel-reason-' + id);
       if (box) box.classList.toggle('active');
     }
-
     function renderSlots(slots) {
       const container = document.getElementById('slotsContainer');
       if (!slots || !slots.length) { container.innerHTML = '<p style="color:#94A3B8">No slots for this date.</p>'; return; }
-      container.innerHTML = slots.map(s => `
+      container.innerHTML = slots.map(s => {
+        const cleanDesc = (s.description || '').replace(/\s*\(Booked by Owner\)/g, '').replace(/\s*\(Booked via AI by Owner\)/g, '').replace(/\s*\(Booked by Visitor - [^\)]+\)/g, '');
+        return `
         <div class="slot-card ${s.status}">
           <div class="slot-title-row">
-            <div class="slot-title">${s.title}</div>
+            <div class="slot-title">
+              ${s.title}
+              <span style="font-weight:normal; font-size:12px; color:#94A3B8; margin-left:6px;">
+                (${s.created_by === 'owner' ? 'Booked by Owner' : 'Booked by Visitor'})
+              </span>
+            </div>
             <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Agenda</button>
           </div>
-          <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(s.description) || 'No reason provided.'}</div>
+          <div style="font-size:13px; color:#CBD5E1; margin: 4px 0 8px 0;">Reason: ${escapeHtml(cleanDesc) || 'No reason provided.'}</div>
+          <div class="slot-reason-box" id="reason-${s.id}">${escapeHtml(cleanDesc) || 'No reason provided.'}</div>
           <div class="slot-reason-box" id="mom-${s.id}" style="white-space:pre-line">${s.minutes_of_meeting ? escapeHtml(s.minutes_of_meeting).replace(/\|/g, '\n') : 'No minutes recorded.'}</div>
           <div class="slot-reason-box" id="reschedule-reason-${s.id}">${escapeHtml(s.reschedule_reason) || 'No reason provided.'}</div>
           <div class="slot-reason-box" id="cancel-reason-${s.id}">${escapeHtml(s.cancel_reason) || 'No reason provided.'}</div>
@@ -459,7 +433,7 @@
           <div class="slot-category">${s.category}</div>
           <div class="slot-actions">
             ${(s.status === 'upcoming' || s.status === 'rescheduled') ? `
-              ${s.status === 'rescheduled' ? `<div style="color:#F59E0B;font-size:12px;margin-bottom:6px">rescheduled</div>` : ''}
+              ${s.status === 'rescheduled' ? `<div style="color:#F97316;font-size:12px;margin-bottom:6px">rescheduled</div>` : ''}
               <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
               <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
               <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
@@ -474,9 +448,9 @@
             ` : `<span style="color:#94A3B8;font-size:12px">${s.status}</span>`}
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
-
     function updateStatus(id, status) {
       if (status === 'completed') {
         currentMomSlotId = id;
@@ -489,16 +463,70 @@
         supabaseFetch('schedules?id=eq.' + id, 'PATCH', { status }).then(reloadSlots);
       }
     }
-
     function closeMomModal() { document.getElementById('momModal').classList.remove('active'); }
-
     function updateMomCount() {
       const words = document.getElementById('momText').value.trim().split(/\s+/).filter(w => w.length > 0).length;
       const el = document.getElementById('momCount');
       el.textContent = words + ' / 30 words minimum';
       el.className = 'word-count' + (words < 30 ? ' error' : '');
     }
-
+    let momRecognition = null;
+    let isMomListening = false;
+    function toggleMomVoiceInput(e) {
+      if (e) e.preventDefault();
+      const btn = document.getElementById('momVoiceBtn');
+      if (isMomListening) {
+        if (momRecognition) momRecognition.stop();
+        isMomListening = false;
+        btn.style.background = '#334155';
+        btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
+        return;
+      }
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+        return;
+      }
+      
+      momRecognition = new SpeechRecognition();
+      momRecognition.lang = 'en-IN';
+      momRecognition.interimResults = false;
+      momRecognition.maxAlternatives = 1;
+      
+      momRecognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        const textarea = document.getElementById('momText');
+        textarea.value = (textarea.value.trim() + ' ' + transcript).trim();
+        updateMomCount();
+      };
+      
+      momRecognition.onerror = function(event) {
+        console.log('Mom Speech recognition error:', event.error);
+        isMomListening = false;
+        btn.style.background = '#334155';
+        btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
+      };
+      
+      momRecognition.onend = function() {
+        isMomListening = false;
+        btn.style.background = '#334155';
+        btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
+      };
+      
+      isMomListening = true;
+      btn.style.background = '#EF4444';
+      btn.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
+      
+      try {
+        momRecognition.start();
+      } catch(err) {
+        console.log('Mom Speech start error:', err);
+        isMomListening = false;
+        btn.style.background = '#334155';
+        btn.innerHTML = '<i class="fas fa-microphone"></i> Record Minutes';
+      }
+    }
     async function submitMom() {
       const text = document.getElementById('momText').value.trim();
       const words = text.split(/\s+/).filter(w => w.length > 0).length;
@@ -508,7 +536,6 @@
       closeMomModal();
       reloadSlots();
     }
-
     function cancelSlot(id, visitorEmail, visitorName) {
       currentCancelSlotId = id;
       currentCancelVisitorEmail = visitorEmail;
@@ -517,19 +544,15 @@
       document.getElementById('cancelReasonError').style.display = 'none';
       document.getElementById('cancelReasonModal').classList.add('active');
     }
-
     function closeCancelReasonModal() { document.getElementById('cancelReasonModal').classList.remove('active'); }
-
     async function submitCancelReason() {
       const reason = document.getElementById('cancelReasonText').value.trim();
       const errEl = document.getElementById('cancelReasonError');
       if (!reason) { errEl.style.display = 'block'; errEl.textContent = 'Please enter a reason for cancellation.'; return; }
-
       await supabaseFetch('schedules?id=eq.' + currentCancelSlotId, 'PATCH', {
         status: 'cancelled',
         cancel_reason: reason
       });
-
       if (currentCancelVisitorEmail) {
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
           visitor_name: currentCancelVisitorName || 'Visitor',
@@ -538,12 +561,10 @@
           description: 'Your meeting has been cancelled. Reason: ' + reason
         });
       }
-
       closeCancelReasonModal();
       reloadSlots();
       loadStatusCounts();
     }
-
     function reloadSlots() {
       if (selectedDate) {
         const y = selectedDate.getFullYear();
@@ -552,14 +573,12 @@
         loadSlots(`${y}-${m}-${d}`);
       }
     }
-
     async function editSlot(id) {
       const newTitle = prompt('Enter new title:');
       if (!newTitle) return;
       await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
       reloadSlots();
     }
-
     function rescheduleSlot(id) {
       currentRescheduleSlotId = id;
       document.getElementById('rescheduleDate').value = '';
@@ -569,30 +588,30 @@
       document.getElementById('rescheduleError').style.display = 'none';
       document.getElementById('rescheduleModal').classList.add('active');
     }
-
     function closeRescheduleModal() { document.getElementById('rescheduleModal').classList.remove('active'); }
-
     async function submitReschedule() {
       const newDate = document.getElementById('rescheduleDate').value;
       const newStart = document.getElementById('rescheduleStart').value;
       const newEnd = document.getElementById('rescheduleEnd').value;
       const reason = document.getElementById('rescheduleReason').value.trim();
       const errEl = document.getElementById('rescheduleError');
-
       if (!newDate || !newStart || !newEnd || !reason) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
-      const todayDateStr4 = new Date().toISOString().split('T')[0];
+      
+      const today = new Date();
+      const offset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(today.getTime() + offset);
+      const todayDateStr4 = istNow.toISOString().split('T')[0];
+      const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
       if (newDate < todayDateStr4) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
+      if (newDate === todayDateStr4 && newStart < currentTimeStr) { errEl.style.display='block'; errEl.textContent='Start time cannot be in the past.'; return; }
       if (newStart >= newEnd) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
-
       const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
       const overlap = existing.find(s => s.id !== currentRescheduleSlotId && !(newEnd <= s.start_time || newStart >= s.end_time));
       if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
-
       errEl.style.display = 'none';
       await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId, 'PATCH', {
         date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: reason
       });
-
       const slotData = await supabaseFetch('schedules?id=eq.' + currentRescheduleSlotId + '&select=visitor_email,visitor_name');
       if (slotData[0] && slotData[0].visitor_email) {
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
@@ -602,12 +621,10 @@
           description: 'Your meeting has been rescheduled. Reason: ' + reason
         });
       }
-
       closeRescheduleModal();
       reloadSlots();
       loadStatusCounts();
     }
-
     function renderCalendar() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
@@ -637,9 +654,7 @@
         grid.appendChild(el);
       }
     }
-
     function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); renderCalendar(); }
-
     function selectDate(year, month, day) {
       selectedDate = new Date(year, month, day);
       document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
@@ -647,22 +662,12 @@
       reloadSlots();
       renderCalendar();
     }
-
     function copyBookingLink() {
       navigator.clipboard.writeText(window.location.origin + '/book');
       alert('Link copied!');
     }
-
     function openAddSlot() { document.getElementById('addSlotModal').classList.add('active'); }
     function closeAddSlot() { document.getElementById('addSlotModal').classList.remove('active'); }
-
-    function updateWordCount() {
-      const words = document.getElementById('slotDesc').value.trim().split(/\s+/).filter(w => w).length;
-      const el = document.getElementById('wordCount');
-      el.textContent = words + ' / 25 words minimum';
-      el.className = 'word-count' + (words < 25 ? ' error' : '');
-    }
-
     async function submitSlot() {
       const title = document.getElementById('slotTitle').value.trim();
       const date = document.getElementById('slotDate').value;
@@ -670,41 +675,39 @@
       const end = document.getElementById('slotEnd').value;
       const desc = document.getElementById('slotDesc').value.trim();
       const category = document.getElementById('slotCategory').value;
-      const words = desc.split(/\s+/).filter(w => w).length;
       const errEl = document.getElementById('slotError');
-
       if (!title || !date || !start || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
-      const todayDateStr = new Date().toISOString().split('T')[0];
+      
+      const today = new Date();
+      const offset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(today.getTime() + offset);
+      const todayDateStr = istNow.toISOString().split('T')[0];
+      const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
       if (date < todayDateStr) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
-      if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
+      if (date === todayDateStr && start < currentTimeStr) { errEl.style.display='block'; errEl.textContent='Start time cannot be in the past.'; return; }
       if (start >= end) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
       if (start < '05:00') { errEl.style.display='block'; errEl.textContent='Start time must be after 5:00 AM.'; return; }
       if (end > '23:00') { errEl.style.display='block'; errEl.textContent='End time must be before 11:00 PM.'; return; }
-      if (start < '13:00' && end > '12:00') { errEl.style.display='block'; errEl.textContent='12:00 PM to 1:00 PM is lunch break. No bookings allowed in this slot.'; return; }
-
       const existing = await supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled');
       const overlap = existing.find(s => !(end <= s.start_time || start >= s.end_time));
       if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
-
       errEl.style.display = 'none';
       await supabaseFetch('schedules', 'POST', {
         title, date, start_time: start, end_time: end,
-        description: desc + ' (Booked by Owner)',
+        description: desc,
         category, status: 'upcoming', created_by: 'owner'
       });
       closeAddSlot();
       reloadSlots();
     }
-let isListening = false;
+    let isListening = false;
     let recognition = null;
     let lastDetectedLang = 'en-IN';
     let isVoiceMessage = false;
-
     function detectLanguage(text) {
       const teluguPattern = /[\u0C00-\u0C7F]/;
       return teluguPattern.test(text) ? 'te-IN' : 'en-IN';
     }
-
     function initRecognition(lang) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -719,27 +722,22 @@ let isListening = false;
         const transcript = event.results[0][0].transcript;
         document.getElementById('chatInput').value = transcript;
         lastDetectedLang = detectLanguage(transcript);
-        isVoiceMessage = true;
-        sendMessage();
       };
       rec.onerror = function(event) {
         console.log('Speech recognition error:', event.error);
         isListening = false;
-        document.getElementById('micBtn').style.background = '#334155';
         const micBtn = document.getElementById('micBtn');
         micBtn.style.background = '#334155';
         micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       };
       rec.onend = function() {
         isListening = false;
-        document.getElementById('micBtn').style.background = '#334155';
         const micBtn = document.getElementById('micBtn');
         micBtn.style.background = '#334155';
         micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       };
       return rec;
     }
-
     function toggleVoiceInput() {
       const micBtn = document.getElementById('micBtn');
       if (isListening) {
@@ -752,7 +750,6 @@ let isListening = false;
       recognition = initRecognition('en-IN');
       if (!recognition) return;
       isListening = true;
-      micBtn.style.background = '#6366F1';
       micBtn.style.background = '#EF4444';
       micBtn.innerHTML = '<i class="fas fa-stop"></i>';
       try {
@@ -763,19 +760,6 @@ let isListening = false;
         micBtn.style.background = '#334155';
         micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       }
-    }
-
-    function speakText(text, lang) {
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
-      const cleanText = text.replace(/\[ACTION:[^\]]+\]/g, '').trim();
-      if (!cleanText) return;
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = lang;
-      const voices = window.speechSynthesis.getVoices();
-      const matchedVoice = voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0]));
-      if (matchedVoice) utterance.voice = matchedVoice;
-      window.speechSynthesis.speak(utterance);
     }
     function normalizeTime(t) {
       if (!t) return t;
@@ -789,7 +773,6 @@ let isListening = false;
       if (meridian === 'am' && hour === 12) hour = 0;
       return String(hour).padStart(2, '0') + ':' + min;
     }
-
     async function sendMessage() {
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
@@ -806,111 +789,102 @@ let isListening = false;
       }
       input.value = '';
       container.scrollTop = container.scrollHeight;
-
       const today = new Date();
-      const y = today.getFullYear();
-      const m = String(today.getMonth()+1).padStart(2,'0');
-      const d = String(today.getDate()).padStart(2,'0');
-      const todayStr = `${y}-${m}-${d}`;
+      const offset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(today.getTime() + offset);
+      const todayStr = istNow.toISOString().split('T')[0];
       const slots = await supabaseFetch('schedules?status=neq.cancelled&order=date,start_time');
-      const requests = await supabaseFetch(
-  'booking_requests?or=(status.eq.pending,status.eq.withdrawal_requested)'
-);
-
-      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST. 12:00 PM to 1:00 PM is a lunch break. Only mention this if the owner specifically tries to book, reschedule, or ask about a slot that overlaps 12:00-13:00 — do not mention lunch break in unrelated replies.
+      const pending = await supabaseFetch('booking_requests?status=eq.pending');
+      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST.
       Never book or reschedule any slot to a date before today (${todayStr}). Only mention this if the owner specifically tries to use a past date — do not mention it in unrelated replies.
-
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
-Booking requests (including pending and withdrawal_requested): ${JSON.stringify(requests)}
-
+Pending booking requests: ${JSON.stringify(pending)}
 LANGUAGE RULE: Always reply in the same language and script the owner used in their message. If the owner writes in Telugu (Telugu script), reply in Telugu (Telugu script). If the owner writes in English, reply in English. If the owner writes in Tenglish (Telugu words written in English/Latin script, e.g., 'meeting complete chey' or 'yela unnavu'), you MUST reply in Tenglish (Telugu words in English/Latin script). Do not translate Tenglish to Telugu script or English.
-
 You can have a normal friendly conversation (greetings, small talk) and also help manage the schedule. Reply in plain text only, no stars, no markdown formatting. Keep replies short and directly answer only what was asked.
-
 When speaking to the owner, never read out internal slot IDs, request IDs, or raw database identifiers in your reply — refer to meetings naturally by title, date, and time instead (e.g. "your meeting with Sravani at 5 PM" not "slot ID abc123"). Keep confirmations conversational and natural, as if speaking out loud.
-
-When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a description of minimum 25 words explaining the purpose of the meeting. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
+When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a description. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
 [ACTION:BOOK:title:date:HH:MM:HH:MM:Description]
-
 When the owner wants to cancel a slot, identify the correct slot id from the schedule data above, ask the owner for a reason for cancellation, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:CANCEL:slot_id:reason]
-
 When the owner wants to edit a slot's title, identify the slot id, confirm the new title with the owner, then once confirmed reply with EXACTLY:
 [ACTION:EDIT:slot_id:new_title]
-
 When the owner wants to reschedule a slot, identify the slot id, ask the owner for a reason for rescheduling, confirm the new date, time, and reason with the owner, then once confirmed reply with EXACTLY this with times in strict 24-hour HH:MM format:
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM:reason]
-
 When the owner wants to mark a slot as completed/done, identify the slot id, ask for minutes of the meeting (MoM) of minimum 30 words, and once provided and confirmed by the owner, reply with EXACTLY:
 [ACTION:COMPLETE:slot_id:mom_text]
-
 When the owner wants to accept a pending booking request, identify the request id from the pending booking requests list above, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:ACCEPT_REQUEST:request_id]
-
 When the owner wants to reschedule (ask the visitor to pick a new time for) a pending booking request, identify the request id, ask the owner for the reschedule reason/remarks, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:RESCHEDULE_REQUEST:request_id:remarks]
-
 When the owner wants to decline a pending booking request, identify the request id, ask the owner for the decline reason, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:DECLINE_REQUEST:request_id:remarks]
-
-When the owner wants to accept a visitor's withdrawal request, identify the request id from the pending/withdrawal_requested booking requests, confirm with the owner, then once confirmed reply with EXACTLY:
-[ACTION:ACCEPT_WITHDRAWAL:request_id]
-
-When the owner wants to decline a visitor's withdrawal request, identify the request id, confirm with the owner, then once confirmed reply with EXACTLY:
-[ACTION:DECLINE_WITHDRAWAL:request_id]
-
-When the owner asks for a daily report or summary (of today or any specific date), reply with EXACTLY:
-[ACTION:DAILY_REPORT:date]
-(use today's date ${todayStr} if no date is mentioned, format YYYY-MM-DD)
-
 CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Never take an action without the owner's explicit confirmation.`;
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
       if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
-
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Thinking...</div></div>`;
       container.scrollTop = container.scrollHeight;
-
       try {
+        const geminiApiKey = localStorage.getItem('gemini_api_key') || '';
+        const geminiModel = localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite';
+        
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ systemPrompt, messages: chatHistory })
+          body: JSON.stringify({ 
+            systemPrompt, 
+            messages: chatHistory,
+            geminiApiKey,
+            geminiModel
+          })
         });
         const data = await res.json();
         document.getElementById(loadingId)?.remove();
         const reply = data.reply || 'Sorry, I could not process that.';
         chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-
-         if (reply.includes('[ACTION:CANCEL:')) {
-  const match = reply.match(/\[ACTION:CANCEL:([^:]+):([^\]]+)\]/);
-  if (match) {
-    await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { status: 'cancelled', cancel_reason: match[2] });
-    reloadSlots(); loadStatusCounts();
-  }
-}
+        if (reply.includes('[ACTION:CANCEL:')) {
+          const match = reply.match(/\[ACTION:CANCEL:([^:]+):([^\]]+)\]/);
+          if (match) {
+            const slotId = match[1];
+            const reason = match[2];
+            const slotData = await supabaseFetch('schedules?id=eq.' + slotId + '&select=visitor_email,visitor_name,title');
+            await supabaseFetch('schedules?id=eq.' + slotId, 'PATCH', { status: 'cancelled', cancel_reason: reason });
+            if (slotData[0] && slotData[0].visitor_email) {
+              emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+                visitor_name: slotData[0].visitor_name || 'Visitor',
+                visitor_email: slotData[0].visitor_email,
+                requested_date: '', start_time: '', end_time: '',
+                description: 'Your meeting "' + slotData[0].title + '" has been cancelled. Reason: ' + reason
+              });
+            }
+            reloadSlots(); loadStatusCounts();
+          }
+        }
         if (reply.includes('[ACTION:BOOK:')) {
           const match = reply.match(/\[ACTION:BOOK:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*):([^\]]*)\]/);
           if (match) {
             const newStart = normalizeTime(match[3]);
             const newEnd = normalizeTime(match[4]);
             const rawDesc = match[5] || 'Booked via AI assistant';
-            if (newStart < '13:00' && newEnd > '12:00') {
-              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, 12:00 PM to 1:00 PM is lunch break. No bookings allowed in this slot.</div></div>`;
-              container.scrollTop = container.scrollHeight;
-              isVoiceMessage = false;
-              return;
-            }
-            const todayDateStr2 = new Date().toISOString().split('T')[0];
+            
+            const today = new Date();
+            const offset = 5.5 * 60 * 60 * 1000;
+            const istNow = new Date(today.getTime() + offset);
+            const todayDateStr2 = istNow.toISOString().split('T')[0];
+            const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
             if (match[2] < todayDateStr2) {
               container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that date has already passed. Please choose today or a future date.</div></div>`;
               container.scrollTop = container.scrollHeight;
-              isVoiceMessage = false;
+              return;
+            }
+            if (match[2] === todayDateStr2 && newStart < currentTimeStr) {
+              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that time has already passed. Please choose a future slot.</div></div>`;
+              container.scrollTop = container.scrollHeight;
               return;
             }
             await supabaseFetch('schedules', 'POST', {
               title: match[1], date: match[2], start_time: newStart, end_time: newEnd,
-              description: rawDesc + ' (Booked via AI by Owner)',
+              description: rawDesc,
               category: 'Meeting', status: 'upcoming', created_by: 'owner'
             });
             reloadSlots();
@@ -924,23 +898,44 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           }
         }
         if (reply.includes('[ACTION:RESCHEDULE:')) {
-  const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*):([^\]]*)\]/);
-  if (match) {
-    const newStart = normalizeTime(match[3]);
-    const newEnd = normalizeTime(match[4]);
-    const todayDateStr3 = new Date().toISOString().split('T')[0];
-    if (match[2] < todayDateStr3) {
-      container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that date has already passed. Please choose today or a future date.</div></div>`;
-      container.scrollTop = container.scrollHeight;
-      isVoiceMessage = false;
-      return;
-    }
-    await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', {
-      date: match[2], start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: match[5] || 'Rescheduled via AI assistant'
-    });
-    reloadSlots(); loadStatusCounts();
-  }
-}
+          const match = reply.match(/\[ACTION:RESCHEDULE:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*):([^\]]*)\]/);
+          if (match) {
+            const slotId = match[1];
+            const newDate = match[2];
+            const newStart = normalizeTime(match[3]);
+            const newEnd = normalizeTime(match[4]);
+            const reason = match[5] || 'Rescheduled via AI assistant';
+            
+            const today = new Date();
+            const offset = 5.5 * 60 * 60 * 1000;
+            const istNow = new Date(today.getTime() + offset);
+            const todayDateStr3 = istNow.toISOString().split('T')[0];
+            const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
+            if (newDate < todayDateStr3) {
+              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that date has already passed. Please choose today or a future date.</div></div>`;
+              container.scrollTop = container.scrollHeight;
+              return;
+            }
+            if (newDate === todayDateStr3 && newStart < currentTimeStr) {
+              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that time has already passed. Please choose a future slot.</div></div>`;
+              container.scrollTop = container.scrollHeight;
+              return;
+            }
+            const slotData = await supabaseFetch('schedules?id=eq.' + slotId + '&select=visitor_email,visitor_name,title');
+            await supabaseFetch('schedules?id=eq.' + slotId, 'PATCH', {
+              date: newDate, start_time: newStart, end_time: newEnd, status: 'rescheduled', reschedule_reason: reason
+            });
+            if (slotData[0] && slotData[0].visitor_email) {
+              emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+                visitor_name: slotData[0].visitor_name || 'Visitor',
+                visitor_email: slotData[0].visitor_email,
+                requested_date: newDate, start_time: newStart, end_time: newEnd,
+                description: 'Your meeting "' + slotData[0].title + '" has been rescheduled. Reason: ' + reason
+              });
+            }
+            reloadSlots(); loadStatusCounts();
+          }
+        }
         if (reply.includes('[ACTION:COMPLETE:')) {
           const match = reply.match(/\[ACTION:COMPLETE:([^:]+):([^\]]+)\]/);
           if (match) {
@@ -949,54 +944,37 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           }
         }
         if (reply.includes('[ACTION:ACCEPT_REQUEST:')) {
-  const match = reply.match(/\[ACTION:ACCEPT_REQUEST:([^\]]+)\]/);
-
-  if (match) {
-    const requestId = match[1];
-
-    const reqData = await supabaseFetch('booking_requests?id=eq.' + requestId);
-
-    if (reqData.length) {
-      const r = reqData[0];
-
-      await supabaseFetch(
-        'booking_requests?id=eq.' + requestId,
-        'PATCH',
-        { status: 'accepted' }
-      );
-
-      await supabaseFetch('schedules', 'POST', {
-        title: 'Meeting with ' + r.visitor_name,
-        date: r.requested_date,
-        start_time: r.start_time,
-        end_time: r.end_time,
-        description: (r.description || '') + ' (Booked by Visitor - ' + r.visitor_name + ')',
-        category: 'Meeting',
-        status: 'upcoming',
-        created_by: 'visitor',
-        visitor_name: r.visitor_name,
-        visitor_email: r.visitor_email
-      });
-
-      emailjs.send(
-        EMAILJS_SERVICE,
-        TEMPLATE_VISITOR,
-        {
-          visitor_name: r.visitor_name,
-          visitor_email: r.visitor_email,
-          requested_date: r.requested_date,
-          start_time: r.start_time,
-          end_time: r.end_time,
-          description: 'Your meeting request has been accepted!'
+          const match = reply.match(/\[ACTION:ACCEPT_REQUEST:([^\]]+)\]/);
+          if (match) {
+            const requestId = match[1];
+            const reqData = await supabaseFetch('booking_requests?id=eq.' + requestId);
+            if (reqData.length) {
+              const r = reqData[0];
+              await supabaseFetch('booking_requests?id=eq.' + requestId, 'PATCH', { status: 'accepted' });
+              await supabaseFetch('schedules', 'POST', {
+                title: 'Meeting with ' + r.visitor_name,
+                date: r.requested_date,
+                start_time: r.start_time,
+                end_time: r.end_time,
+                description: r.description,
+                category: 'Meeting',
+                status: 'upcoming',
+                created_by: 'visitor',
+                visitor_name: r.visitor_name,
+                visitor_email: r.visitor_email
+              });
+              emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+                visitor_name: r.visitor_name,
+                visitor_email: r.visitor_email,
+                requested_date: r.requested_date,
+                start_time: r.start_time,
+                end_time: r.end_time,
+                description: 'Your meeting request has been accepted!'
+              });
+              loadRequests(); loadPendingCount(); reloadSlots();
+            }
+          }
         }
-      );
-
-      loadRequests();
-      loadPendingCount();
-      reloadSlots();
-    }
-  }
-}
         if (reply.includes('[ACTION:RESCHEDULE_REQUEST:')) {
           const match = reply.match(/\[ACTION:RESCHEDULE_REQUEST:([^:]+):([^\]]+)\]/);
           if (match) {
@@ -1033,62 +1011,6 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
             loadRequests(); loadPendingCount();
           }
         }
-        if (reply.includes('[ACTION:ACCEPT_WITHDRAWAL:')) {
-  const match = reply.match(/\[ACTION:ACCEPT_WITHDRAWAL:([^\]]+)\]/);
-  if (match) {
-    const reqId = match[1];
-    const reqData = await supabaseFetch('booking_requests?id=eq.' + reqId);
-    if (reqData[0]) {
-      const r = reqData[0];
-      await supabaseFetch('booking_requests?id=eq.' + reqId, 'PATCH', { status: 'withdrawn' });
-      const schedules = await supabaseFetch('schedules?date=eq.' + r.requested_date + '&visitor_email=eq.' + r.visitor_email + '&status=neq.cancelled');
-      if (schedules[0]) {
-        await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'withdrawn' });
-      }
-      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
-        visitor_name: r.visitor_name, visitor_email: r.visitor_email,
-        requested_date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
-        description: 'Your withdrawal request has been accepted. The meeting has been cancelled.'
-      });
-      loadRequests(); loadPendingCount(); reloadSlots();
-    }
-  }
-}
-if (reply.includes('[ACTION:DECLINE_WITHDRAWAL:')) {
-  const match = reply.match(/\[ACTION:DECLINE_WITHDRAWAL:([^\]]+)\]/);
-  if (match) {
-    const reqId = match[1];
-    const reqData = await supabaseFetch('booking_requests?id=eq.' + reqId);
-    if (reqData[0]) {
-      const r = reqData[0];
-      await supabaseFetch('booking_requests?id=eq.' + reqId, 'PATCH', { status: 'withdrawal_declined' });
-      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
-        visitor_name: r.visitor_name, visitor_email: r.visitor_email,
-        requested_date: r.requested_date, start_time: r.start_time, end_time: r.end_time,
-        description: 'Your withdrawal request has been declined. The meeting remains as scheduled.'
-      });
-      loadRequests(); loadPendingCount();
-    }
-  }
-}
-
-if (reply.includes('[ACTION:DAILY_REPORT:')) {
-  const match = reply.match(/\[ACTION:DAILY_REPORT:([^\]]+)\]/);
-  if (match) {
-    const rDate = match[1].trim();
-    const { statsLine, narrative } = await buildDailyReportText(rDate);
-    const fullText = statsLine + '\n\n' + narrative;
-    container.innerHTML += `<div class="message ai"><div class="message-bubble" style="white-space:pre-wrap">${fullText}</div></div>`;
-    try {
-      await supabaseFetch('chat_history', 'POST', { date: chatDateStr, role: 'ai', message: fullText });
-    } catch (e) {
-      console.log('chat_history log failed (non-critical):', e);
-    }
-    container.scrollTop = container.scrollHeight;
-    isVoiceMessage = false;
-    return;
-  }
-}
         let cleanReply = reply.replace(/\[ACTION:[^\]]+\]/g, '').trim();
         if (!cleanReply) cleanReply = 'Done! Your request has been processed.';
         container.innerHTML += `<div class="message ai"><div class="message-bubble">${cleanReply}</div></div>`;
@@ -1109,16 +1031,13 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
       const data = await supabaseFetch('booking_requests?status=eq.pending&select=id');
       document.getElementById('badge').textContent = data.length || 0;
     }
-
     function openRequestsDrawer() {
       document.getElementById('requestsDrawer').classList.add('active');
       loadRequests();
     }
-
     function closeRequestsDrawer() {
       document.getElementById('requestsDrawer').classList.remove('active');
     }
-
     async function loadRequests() {
       const container = document.getElementById('requestsContainer');
       container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
@@ -1133,25 +1052,51 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
           <div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${r.visitor_email}</div>
           <div style="font-size:13px;margin-bottom:4px">${r.requested_date} | ${r.start_time.slice(0,5)} — ${r.end_time.slice(0,5)}</div>
           <div style="font-size:13px;margin-bottom:12px;color:#CBD5E1">${r.description}</div>
-          ${r.status === 'withdrawal_requested' ? `
-          <div style="background:#F59E0B22;border:1px solid #F59E0B;border-radius:6px;padding:8px;margin-bottom:8px;font-size:12px;color:#F59E0B;">
-            ⚠️ Visitor requested withdrawal. Reason: ${r.withdrawal_reason || '—'}
+          <div id="actions-container-${r.id}">
+            ${r.status === 'pending' ? `
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="showActionConfirm('accept','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}','${(r.description||'').replace(/'/g,"&#39;")}')">Accept</button>
+              <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="showActionConfirm('reschedule','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Request Reschedule</button>
+              <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="showActionConfirm('decline','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Decline</button>
+            </div>` : `<div style="font-size:12px;color:#94A3B8">Remarks: ${r.owner_remarks || '—'}</div>`}
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn" style="font-size:12px;padding:6px 12px;background:#22C55E;color:white" onclick="acceptWithdrawal('${r.id}','${r.visitor_email}','${r.visitor_name}','${r.requested_date}','${r.start_time}','${r.end_time}')">Accept Withdrawal</button>
-            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="declineWithdrawal('${r.id}','${r.visitor_email}','${r.visitor_name}','${r.requested_date}','${r.start_time}','${r.end_time}')">Decline Withdrawal</button>
-          </div>` : r.status === 'withdrawn' ? `
-          <div style="font-size:12px;color:#EF4444;">❌ Withdrawn by visitor</div>
-          ` : r.status === 'pending' ? `
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="openRemarks('accept_remarks','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}','${(r.description||'').replace(/'/g,"&#39;")}')">Accept</button>
-            <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="openRemarks('reschedule','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Request Reschedule</button>
-            <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="openRemarks('decline','${r.id}','${r.visitor_email}','${r.requested_date}','${r.start_time}','${r.end_time}','${r.visitor_name}')">Decline</button>
-          </div>` : `<div style="font-size:12px;color:#94A3B8">Remarks: ${r.owner_remarks || '—'}</div>`}
         </div>
       `).join('');
     }
-
+    function showActionConfirm(action, id, email, date, start, end, name, desc) {
+      const container = document.getElementById('actions-container-' + id);
+      const actionTitles = { accept: 'Accept', reschedule: 'Reschedule', decline: 'Decline' };
+      const btnClasses = { accept: 'btn-primary', reschedule: 'btn-primary', decline: 'btn-cancel' };
+      
+      container.innerHTML = `
+        <div style="display:flex; gap:8px; align-items:center; width:100%;">
+          <span style="font-size:12px; color:#F1F5F9; font-weight:bold;">${actionTitles[action]}:</span>
+          <button class="btn ${btnClasses[action]}" style="font-size:12px; padding:6px 12px;" onclick="submitDirectAction('${action}', '${id}', '${email}', '${date}', '${start}', '${end}', '${name}', '${desc}')">Send</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="openRemarks('${action === 'accept' ? 'accept_remarks' : action}', '${id}', '${email}', '${date}', '${start}', '${end}', '${name}', '${desc}')">Remarks (Optional)</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px; background:transparent; border:1px solid #334155;" onclick="resetActionButtons('${id}', '${email}', '${date}', '${start}', '${end}', '${name}', '${desc}')">Cancel</button>
+        </div>
+      `;
+    }
+    function resetActionButtons(id, email, date, start, end, name, desc) {
+      const container = document.getElementById('actions-container-' + id);
+      container.innerHTML = `
+        <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="showActionConfirm('accept','${id}','${email}','${date}','${start}','${end}','${name}','${desc}')">Accept</button>
+        <button class="btn" style="font-size:12px;padding:6px 12px;background:#F59E0B;color:white" onclick="showActionConfirm('reschedule','${id}','${email}','${date}','${start}','${end}','${name}')">Request Reschedule</button>
+        <button class="btn" style="font-size:12px;padding:6px 12px;background:#EF4444;color:white" onclick="showActionConfirm('decline','${id}','${email}','${date}','${start}','${end}','${name}')">Decline</button>
+      `;
+    }
+    async function submitDirectAction(action, id, email, date, start, end, name, desc) {
+      currentRemarkAction = action === 'accept' ? 'accept_remarks' : action;
+      currentRemarkRequestId = id;
+      currentRemarkEmail = email;
+      currentRemarkDate = date;
+      currentRemarkStart = start;
+      currentRemarkEnd = end;
+      currentRemarkName = name;
+      currentRemarkDesc = desc || '';
+      document.getElementById('remarksText').value = '';
+      await submitRemarks();
+    }
     function openRemarks(action, id, email, date, start, end, name, desc) {
       currentRemarkAction = action;
       currentRemarkRequestId = id;
@@ -1166,9 +1111,7 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
       document.getElementById('remarksText').value = '';
       document.getElementById('remarksModal').classList.add('active');
     }
-
     function closeRemarksModal() { document.getElementById('remarksModal').classList.remove('active'); }
-
     function openChatHistory() {
       document.getElementById('chatHistoryModal').classList.add('active');
       const today = new Date();
@@ -1176,14 +1119,12 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
       document.getElementById('chatHistoryDate').value = todayStr;
       loadChatHistoryForDate();
     }
-
     function closeChatHistory() { document.getElementById('chatHistoryModal').classList.remove('active'); }
-
     async function loadChatHistoryForDate() {
       const date = document.getElementById('chatHistoryDate').value;
       const container = document.getElementById('chatHistoryContainer');
       container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
-      const data = await supabaseFetch('chat_history?date=eq.' + date + '&order=created_at.asc');
+      const data = await supabaseFetch('chat_history?date=eq.' + date + '&role=neq.daily_report&order=created_at.asc');
       if (!data.length) { container.innerHTML = '<p style="color:#94A3B8">No chat history for this date.</p>'; return; }
       container.innerHTML = data.map(m => `
         <div class="message ${m.role === 'user' ? 'user' : 'ai'}">
@@ -1191,7 +1132,6 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
         </div>
       `).join('');
     }
-
     async function submitRemarks() {
       const remarks = document.getElementById('remarksText').value.trim();
       if (currentRemarkAction === 'accept_remarks') {
@@ -1201,7 +1141,7 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
         await supabaseFetch('schedules', 'POST', {
           title: 'Meeting with ' + currentRemarkName,
           date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
-          description: (currentRemarkDesc || 'No reason provided') + ' (Booked by Visitor - ' + currentRemarkName + ')',
+          description: currentRemarkDesc || 'No reason provided',
           category: 'Meeting', status: 'upcoming', created_by: 'visitor',
           visitor_name: currentRemarkName, visitor_email: currentRemarkEmail
         });
@@ -1215,49 +1155,20 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
           visitor_name: currentRemarkName || 'Visitor', visitor_email: currentRemarkEmail,
           requested_date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
-          description: 'Reschedule requested: ' + remarks
+          description: 'Reschedule requested' + (remarks ? ': ' + remarks : '.')
         });
       } else if (currentRemarkAction === 'decline') {
         await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'declined', owner_remarks: remarks });
         emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
           visitor_name: currentRemarkName || 'Visitor', visitor_email: currentRemarkEmail,
           requested_date: currentRemarkDate, start_time: currentRemarkStart, end_time: currentRemarkEnd,
-          description: 'Request declined. Reason: ' + remarks
+          description: 'Request declined' + (remarks ? '. Reason: ' + remarks : '.')
         });
       }
       closeRemarksModal();
       loadRequests();
       loadPendingCount();
     }
-    async function acceptWithdrawal(id, email, name, date, start, end) {
-      if (!confirm('Accept this withdrawal request? The meeting will be cancelled.')) return;
-      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
-      const schedules = await supabaseFetch('schedules?date=eq.' + date + '&visitor_email=eq.' + email + '&status=neq.cancelled');
-      if (schedules[0]) {
-        await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'withdrawn' });
-      }
-      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
-        visitor_name: name, visitor_email: email,
-        requested_date: date, start_time: start, end_time: end,
-        description: 'Your withdrawal request has been accepted. The meeting has been cancelled.'
-      });
-      loadRequests();
-      loadPendingCount();
-      reloadSlots();
-    }
-
-    async function declineWithdrawal(id, email, name, date, start, end) {
-      if (!confirm('Decline this withdrawal? The meeting will remain as accepted.')) return;
-      await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawal_declined' });
-      emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
-        visitor_name: name, visitor_email: email,
-        requested_date: date, start_time: start, end_time: end,
-        description: 'Your withdrawal request has been declined. The meeting remains as scheduled.'
-      });
-      loadRequests();
-      loadPendingCount();
-    }
-
     function openDailyReport() {
   const today = new Date();
   const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
@@ -1265,57 +1176,24 @@ if (reply.includes('[ACTION:DAILY_REPORT:')) {
   document.getElementById('reportContainer').innerHTML = '<p style="color:#94A3B8">Select a date and click Generate.</p>';
   document.getElementById('dailyReportModal').classList.add('active');
 }
-
 function closeDailyReport() {
   document.getElementById('dailyReportModal').classList.remove('active');
 }
-
-async function buildDailyReportText(date) {
+async function generateReport() {
+  const date = document.getElementById('reportDate').value;
+  const container = document.getElementById('reportContainer');
+  if (!date) { container.innerHTML = '<p style="color:#EF4444">Please select a date.</p>'; return; }
+  container.innerHTML = '<p style="color:#94A3B8">Checking reports...</p>';
   const slots = await supabaseFetch('schedules?date=eq.' + date + '&order=start_time');
   const bookingRequests = await supabaseFetch('booking_requests?requested_date=eq.' + date);
   const completed = slots.filter(s => s.status === 'completed');
   const cancelled = slots.filter(s => s.status === 'cancelled');
   const rescheduled = slots.filter(s => s.status === 'rescheduled');
   const upcoming = slots.filter(s => s.status === 'upcoming');
-
-  const systemPrompt = `You are a scheduling analytics assistant. Analyze the following data for ${date} and provide a concise daily report.
-
-Schedule data: ${JSON.stringify(slots)}
-Booking requests for this date: ${JSON.stringify(bookingRequests)}
-
-Provide a report with:
-1. Summary (total meetings, completed, cancelled, rescheduled, upcoming)
-2. Key observations about the day
-3. Any patterns or insights
-4. Recommendations for improvement
-
-Keep it concise and professional. Plain text only, no markdown stars.`;
-
-  const res = await fetch('/api/gemini', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemPrompt,
-      messages: [{ role: 'user', parts: [{ text: 'Generate daily report for ' + date }] }]
-    })
-  });
-  const data = await res.json();
-  const narrative = data.reply || 'Could not generate report.';
-  const statsLine = `Completed: ${completed.length} | Cancelled: ${cancelled.length} | Rescheduled: ${rescheduled.length} | Upcoming: ${upcoming.length}`;
-
-  return { completed, cancelled, rescheduled, upcoming, narrative, statsLine };
-}
-
-async function generateReport() {
-  const date = document.getElementById('reportDate').value;
-  const container = document.getElementById('reportContainer');
-  if (!date) { container.innerHTML = '<p style="color:#EF4444">Please select a date.</p>'; return; }
-
-  container.innerHTML = '<p style="color:#94A3B8">Generating report...</p>';
-
-  try {
-    const { completed, cancelled, rescheduled, upcoming, narrative: report } = await buildDailyReportText(date);
-
+  // Check if daily report already generated and stored
+  const storedReports = await supabaseFetch('chat_history?role=eq.daily_report&date=eq.' + date);
+  if (storedReports.length > 0) {
+    const reportText = storedReports[0].message;
     container.innerHTML = `
       <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:12px">
         <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
@@ -1328,7 +1206,64 @@ async function generateReport() {
             <div style="font-size:11px;color:#94A3B8">Cancelled</div>
           </div>
           <div style="text-align:center;flex:1">
-            <div style="font-size:24px;font-weight:bold;color:#F59E0B">${rescheduled.length}</div>
+            <div style="font-size:24px;font-weight:bold;color:#F97316">${rescheduled.length}</div>
+            <div style="font-size:11px;color:#94A3B8">Rescheduled</div>
+          </div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:24px;font-weight:bold;color:#6366F1">${upcoming.length}</div>
+            <div style="font-size:11px;color:#94A3B8">Upcoming</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #334155;padding-top:12px;font-size:13px;color:#CBD5E1;white-space:pre-wrap;line-height:1.6">${reportText}</div>
+      </div>
+    `;
+    return;
+  }
+  container.innerHTML = '<p style="color:#94A3B8">Generating new report...</p>';
+  const systemPrompt = `You are a scheduling analytics assistant. Analyze the following data for ${date} and provide a concise daily report.
+Schedule data: ${JSON.stringify(slots)}
+Booking requests for this date: ${JSON.stringify(bookingRequests)}
+Provide a report with:
+1. Summary (total meetings, completed, cancelled, rescheduled, upcoming)
+2. Key observations about the day
+3. Any patterns or insights
+4. Recommendations for improvement
+Keep it concise and professional. Plain text only, no markdown stars.`;
+  try {
+    const geminiApiKey = localStorage.getItem('gemini_api_key') || '';
+    const geminiModel = localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite';
+    
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemPrompt,
+        messages: [{ role: 'user', parts: [{ text: 'Generate daily report for ' + date }] }],
+        geminiApiKey,
+        geminiModel
+      })
+    });
+    const data = await res.json();
+    const report = data.reply || 'Could not generate report.';
+    // Store generated report in chat_history
+    await supabaseFetch('chat_history', 'POST', {
+      date: date,
+      role: 'daily_report',
+      message: report
+    });
+    container.innerHTML = `
+      <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+          <div style="text-align:center;flex:1">
+            <div style="font-size:24px;font-weight:bold;color:#22C55E">${completed.length}</div>
+            <div style="font-size:11px;color:#94A3B8">Completed</div>
+          </div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:24px;font-weight:bold;color:#EF4444">${cancelled.length}</div>
+            <div style="font-size:11px;color:#94A3B8">Cancelled</div>
+          </div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:24px;font-weight:bold;color:#F97316">${rescheduled.length}</div>
             <div style="font-size:11px;color:#94A3B8">Rescheduled</div>
           </div>
           <div style="text-align:center;flex:1">
@@ -1348,76 +1283,6 @@ async function generateReport() {
     loadPendingCount();
     const today = new Date();
     selectDate(today.getFullYear(), today.getMonth(), today.getDate());
-    // ===== Admin Panel =====  
-    let adminPasswordCache = '';  
-  
-    function openAdminPanel() {  
-      document.getElementById('adminModal').classList.add('active');  
-      document.getElementById('adminLoginSection').style.display = 'block';  
-      document.getElementById('adminSettingsSection').style.display = 'none';  
-      document.getElementById('adminPassword').value = '';  
-      document.getElementById('adminMsg').textContent = '';  
-    }  
-  
-    function closeAdminPanel() {  
-      document.getElementById('adminModal').classList.remove('active');  
-      adminPasswordCache = '';  
-    }  
-  
-    async function adminLogin() {  
-      const pwd = document.getElementById('adminPassword').value;  
-      if (!pwd) return alert('Enter password');  
-      try {  
-        const res = await fetch('/api/admin-settings', {  
-          method: 'GET',  
-          headers: { 'x-owner-password': pwd }  
-        });  
-        if (res.status === 401) return alert('Wrong password');  
-        if (!res.ok) throw new Error('Failed');  
-        const data = await res.json();  
-        adminPasswordCache = pwd;  
-        document.getElementById('adminLoginSection').style.display = 'none';  
-        document.getElementById('adminSettingsSection').style.display = 'block';  
-        document.getElementById('currentKeyDisplay').textContent =  
-          'Current: ' + (data.gemini_api_key_masked || '(not set)');  
-        if (data.gemini_model) document.getElementById('newModel').value = data.gemini_model;  
-      } catch (e) {  
-        alert('Error: ' + e.message);  
-      }  
-    }  
-  
-    async function saveAdminSettings() {  
-      const newApiKey = document.getElementById('newApiKey').value.trim();  
-      const newModel = document.getElementById('newModel').value;  
-      const msg = document.getElementById('adminMsg');  
-      msg.style.color = '#94A3B8';  
-      msg.textContent = 'Saving...';  
-      try {  
-        const res = await fetch('/api/admin-settings', {  
-          method: 'POST',  
-          headers: {  
-            'Content-Type': 'application/json',  
-            'x-owner-password': adminPasswordCache  
-          },  
-          body: JSON.stringify({ gemini_api_key: newApiKey, gemini_model: newModel })  
-        });  
-        const data = await res.json();  
-        if (!res.ok) throw new Error(data.error || 'Failed');  
-        msg.style.color = '#10B981';  
-        msg.textContent = '✅ Saved successfully!';  
-        document.getElementById('newApiKey').value = '';  
-        // Refresh masked key  
-        const refresh = await fetch('/api/admin-settings', {  
-          headers: { 'x-owner-password': adminPasswordCache }  
-        });  
-        const rd = await refresh.json();  
-        document.getElementById('currentKeyDisplay').textContent =  
-          'Current: ' + (rd.gemini_api_key_masked || '(not set)');  
-      } catch (e) {  
-        msg.style.color = '#EF4444';  
-        msg.textContent = '❌ ' + e.message;  
-      }  
-    }
   </script>
 </body>
 </html>

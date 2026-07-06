@@ -40,12 +40,7 @@
     .status-declined { background: #EF444422; color: #EF4444; }
     .status-reschedule_requested { background: #3B82F622; color: #3B82F6; }
     .status-accepted_with_remarks { background: #22C55E22; color: #22C55E; }
-    .status-withdrawn { background: #EF444422; color: #EF4444; }
-    .status-withdrawal_requested { background: #F59E0B22; color: #F59E0B; }.status-withdrawal_declined {
-    background: #EF444422;
-    color: #EF4444;
-}
-
+    .status-withdrawn { background: #47556922; color: #94A3B8; }
     .chat-messages { height: calc(100vh - 220px); overflow-y: auto; margin-bottom: 12px; }
     .message { margin-bottom: 12px; display: flex; flex-direction: column; }
     .message.user { align-items: flex-end; }
@@ -70,6 +65,7 @@
     .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; }
     .btn-primary { background: #6366F1; color: white; }
     .btn-secondary { background: #334155; color: #F1F5F9; }
+    .btn-cancel { background: #EF4444; color: white; }
     .error-msg { color: #EF4444; font-size: 13px; margin-bottom: 12px; display: none; }
     .success-msg { color: #22C55E; font-size: 13px; margin-bottom: 12px; display: none; }
     @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .panel { border-right: none; border-bottom: 1px solid #334155; } }
@@ -82,26 +78,32 @@
   <div style="background:#1E2938;border:1px solid #334155;border-radius:12px;padding:32px;width:400px;">
     <h2 style="color:#6366F1;margin-bottom:8px;text-align:center">MyScheduler</h2>
     <p style="color:#94A3B8;font-size:13px;text-align:center;margin-bottom:24px">Sign in to book a meeting</p>
-
     <div style="display:flex;gap:8px;margin-bottom:24px;">
       <button id="loginTab" onclick="switchTab('login')" style="flex:1;padding:8px;background:#6366F1;color:white;border:none;border-radius:8px;cursor:pointer;">Login</button>
       <button id="registerTab" onclick="switchTab('register')" style="flex:1;padding:8px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;">Register</button>
     </div>
-
     <div id="authError" style="display:none;color:#EF4444;margin-bottom:12px;"></div>
     <div id="authSuccess" style="display:none;color:#22C55E;margin-bottom:12px;"></div>
-
     <div id="loginForm">
       <input type="email" id="loginEmail" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;"><br>
-      <input type="password" id="loginPassword" placeholder="Password" style="width:100%;padding:10px;margin-bottom:15px;"><br>
+      <div style="position:relative; width:100%; margin-bottom:15px;">
+        <input type="password" id="loginPassword" placeholder="Password" style="width:100%;padding:10px;margin-bottom:0;"><br>
+        <span onclick="togglePasswordVisibility('loginPassword', 'login-eye')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94A3B8;">
+          <i class="fas fa-eye" id="login-eye"></i>
+        </span>
+      </div>
       <button onclick="handleLogin()" style="width:100%;padding:10px;background:#6366F1;color:white;border:none;border-radius:6px;">Login</button>
     </div>
-
     <div id="registerForm" style="display:none;">
       <input type="text" id="regName" placeholder="Full Name" style="width:100%;padding:10px;margin-bottom:10px;"><br>
       <input type="email" id="regEmail" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;"><br>
       <input type="text" id="regDesignation" placeholder="Designation" style="width:100%;padding:10px;margin-bottom:10px;"><br>
-      <input type="password" id="regPassword" placeholder="Password" style="width:100%;padding:10px;margin-bottom:15px;"><br>
+      <div style="position:relative; width:100%; margin-bottom:15px;">
+        <input type="password" id="regPassword" placeholder="Password" style="width:100%;padding:10px;margin-bottom:0;"><br>
+        <span onclick="togglePasswordVisibility('regPassword', 'reg-eye')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#94A3B8;">
+          <i class="fas fa-eye" id="reg-eye"></i>
+        </span>
+      </div>
       <button onclick="handleRegister()" style="width:100%;padding:10px;background:#6366F1;color:white;border:none;border-radius:6px;">Register</button>
     </div>
   </div>
@@ -125,12 +127,10 @@ box-shadow:0 4px 10px rgba(0,0,0,0.25);
 ">
 K
 </button>
-
   <div id="profileCard" style="display:none;position:absolute;right:0;top:48px;width:260px;background:#1E2938;border:1px solid #334155;border-radius:12px;padding:16px;z-index:1000;">
     <div style="font-size:18px;margin-bottom:10px;">👤 <span id="profileName"></span></div>
     <div style="margin-bottom:8px;">💼 <span id="profileDesignation"></span></div>
     <div style="margin-bottom:16px;">📧 <span id="profileEmail"></span></div>
-
     <button onclick="logout()" style="width:100%;padding:10px;background:#DC2626;
 padding:12px;
 border-radius:10px;
@@ -175,7 +175,6 @@ transition:.2s;color:white;border:none;border-radius:8px;cursor:pointer;">
 </div>
     </div>
   </div>
-
   <div class="modal-overlay" id="bookingModal">
     <div class="modal">
       <h3>Request a Meeting</h3>
@@ -206,9 +205,8 @@ transition:.2s;color:white;border:none;border-radius:8px;cursor:pointer;">
         <input type="time" id="bookingEnd" />
       </div>
       <div class="form-group">
-        <label>Reason for Meeting (min 25 words) *</label>
-        <textarea id="bookingDesc" oninput="updateBookingWordCount()" placeholder="Describe why you want to meet..."></textarea>
-        <div class="word-count" id="bookingWordCount">0 / 25 words minimum</div>
+        <label>Reason for Meeting *</label>
+        <textarea id="bookingDesc" placeholder="Describe why you want to meet..."></textarea>
       </div>
       <div class="modal-btns">
         <button class="btn btn-secondary" onclick="closeBookingModal()">Cancel</button>
@@ -216,11 +214,20 @@ transition:.2s;color:white;border:none;border-radius:8px;cursor:pointer;">
       </div>
     </div>
   </div>
-
   <script>
     emailjs.init('o0EwTVp7WtONi-e8k');
     let loggedInVisitor = null;
-
+function togglePasswordVisibility(inputId, eyeId) {
+  const input = document.getElementById(inputId);
+  const eye = document.getElementById(eyeId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    eye.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    eye.className = 'fas fa-eye';
+  }
+}
 function switchTab(tab) {
   if (tab === 'login') {
     document.getElementById('loginForm').style.display = 'block';
@@ -233,42 +240,34 @@ function switchTab(tab) {
     document.getElementById('loginTab').style.background = '#334155';
     document.getElementById('registerTab').style.background = '#6366F1';
   }
-
   document.getElementById('authError').style.display = 'none';
   document.getElementById('authSuccess').style.display = 'none';
 }
-
 async function handleLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   const errEl = document.getElementById('authError');
-
   if (!email || !password) {
     errEl.style.display = 'block';
     errEl.textContent = 'Please fill all fields.';
     return;
   }
-
   const data = await supabaseFetch(
     'visitors?email=eq.' +
     encodeURIComponent(email) +
     '&password=eq.' +
     encodeURIComponent(password)
   );
-
   if (!data.length) {
     errEl.style.display = 'block';
     errEl.textContent = 'Invalid email or password.';
     return;
   }
-
 loggedInVisitor = data[0];
-
 localStorage.setItem(
   'loggedInVisitor',
   JSON.stringify(loggedInVisitor)
 );
-
 showMainApp();
 }
 async function handleRegister() {
@@ -276,67 +275,55 @@ async function handleRegister() {
   const email = document.getElementById('regEmail').value.trim();
   const designation = document.getElementById('regDesignation').value.trim();
   const password = document.getElementById('regPassword').value.trim();
-
   const errEl = document.getElementById('authError');
   const successEl = document.getElementById('authSuccess');
-
   errEl.style.display = 'none';
   successEl.style.display = 'none';
-
   if (!name || !email || !designation || !password) {
     errEl.style.display = 'block';
     errEl.textContent = 'Please fill all fields.';
     return;
   }
-
   if (!/\S+@\S+\.\S+/.test(email)) {
     errEl.style.display = 'block';
     errEl.textContent = 'Please enter a valid email.';
     return;
   }
-
   const existing = await supabaseFetch(
     'visitors?email=eq.' + encodeURIComponent(email)
   );
-
   if (existing.length) {
     errEl.style.display = 'block';
     errEl.textContent = 'Email already registered. Please login.';
     return;
   }
-
   await supabaseFetch('visitors', 'POST', {
     name,
     email,
     designation,
     password
   });
-
   successEl.style.display = 'block';
   successEl.textContent = 'Registration successful! Please login.';
   switchTab('login');
 }
-
 function showMainApp() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
-
   if (loggedInVisitor) {
     document.getElementById('visitorName').value = loggedInVisitor.name;
     document.getElementById('visitorEmail').value = loggedInVisitor.email;
     document.getElementById('visitorDesignation').value = loggedInVisitor.designation;
     document.getElementById('profileName').textContent = loggedInVisitor.name;
-document.getElementById('profileEmail').textContent = loggedInVisitor.email;
-document.getElementById('profileDesignation').textContent = loggedInVisitor.designation;
-document.getElementById('profileAvatar').textContent =
-loggedInVisitor.name.charAt(0).toUpperCase();
-
+    document.getElementById('profileEmail').textContent = loggedInVisitor.email;
+    document.getElementById('profileDesignation').textContent = loggedInVisitor.designation;
+    document.getElementById('profileAvatar').textContent =
+    loggedInVisitor.name.charAt(0).toUpperCase();
     const pastEmail = document.getElementById('pastEmail');
     if (pastEmail) {
       pastEmail.value = loggedInVisitor.email;
     }
   }
-
   renderCalendar().catch(console.error);
 }
 function logout() {
@@ -350,12 +337,10 @@ function toggleProfile() {
 }
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
-
     let currentDate = new Date();
     let selectedDate = null;
     let selectedStartTime = null;
     let chatHistory = [];
-
     async function supabaseFetch(path, method = 'GET', body = null) {
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
         method,
@@ -370,7 +355,6 @@ function toggleProfile() {
       const text = await res.text();
       return text ? JSON.parse(text) : {};
     }
-
     async function renderCalendar() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -384,12 +368,9 @@ function toggleProfile() {
     el.textContent = d;
     grid.appendChild(el);
   });
-
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
-
-  // Visitor past bookings fetch cheyyi
   let pastBookedDates = [];
   if (loggedInVisitor) {
     const monthStr = `${year}-${String(month+1).padStart(2,'0')}`;
@@ -403,13 +384,11 @@ const bookings = await supabaseFetch(
 pastBookedDates = Array.isArray(bookings) ? bookings.map(b => b.requested_date) : [];
 console.log('Past booked dates:',pastBookedDates);
   }
-
   for (let i = 0; i < firstDay; i++) {
     const el = document.createElement('div');
     el.className = 'day empty';
     grid.appendChild(el);
   }
-
   for (let d = 1; d <= daysInMonth; d++) {
     const el = document.createElement('div');
     el.className = 'day';
@@ -418,7 +397,6 @@ console.log('Past booked dates:',pastBookedDates);
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isPast = thisDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const hasBooking = pastBookedDates.includes(dateStr);
-
     if (isPast && !hasBooking) {
       el.classList.add('past');
     } else if (isPast && hasBooking) {
@@ -427,7 +405,6 @@ console.log('Past booked dates:',pastBookedDates);
       el.style.pointerEvents = 'auto';
       el.title = 'You have a booking on this date';
     }
-
     if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) {
       el.classList.add('today');
     }
@@ -438,9 +415,7 @@ console.log('Past booked dates:',pastBookedDates);
     grid.appendChild(el);
   }
 }
-
     function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); renderCalendar().catch(console.error); }
-
     async function selectDate(year, month, day) {
       selectedDate = new Date(year, month, day);
       document.getElementById('selectedDateLabel').textContent = selectedDate.toDateString();
@@ -459,20 +434,14 @@ const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
     }
 function getAvailableSlots(bookedSlots) {
   const available = [];
-
   for (let h = 5; h < 23; h++) {
     const start = String(h).padStart(2, '0') + ':00:00';
     const end = String(h + 1).padStart(2, '0') + ':00:00';
-
-    const isLunch = (h === 12);
-
     const isBooked =
-      isLunch ||
       bookedSlots.some(s =>
         s.start_time < end &&
         s.end_time > start
       );
-
     if (!isBooked) {
       available.push({
         start: start.slice(0, 5),
@@ -480,7 +449,6 @@ function getAvailableSlots(bookedSlots) {
       });
     }
   }
-
   return available;
 }
     function renderTimeline(bookedSlots, dateStr) {
@@ -491,10 +459,9 @@ function getAvailableSlots(bookedSlots) {
       for (let h = 5; h < 23; h++) {
         const startStr = String(h).padStart(2,'0') + ':00:00';
         const endStr = String(h+1).padStart(2,'0') + ':00:00';
-        const isLunch = (startStr < '13:00:00' && endStr > '12:00:00');
-        const isBooked = isLunch || bookedSlots.some(s => s.start_time < endStr && s.end_time > startStr);
+        const isBooked = bookedSlots.some(s => s.start_time < endStr && s.end_time > startStr);
         if (isBooked) {
-          const label = isLunch ? '🍽️ Lunch Break' : '🔒 Booked';
+          const label = '🔒 Booked';
           html += `<div class="time-slot booked">${label}: ${startStr.slice(0,5)} — ${endStr.slice(0,5)}</div>`;
         } else {
           hasAvailable = true;
@@ -504,7 +471,6 @@ function getAvailableSlots(bookedSlots) {
       if (!hasAvailable) html = '<p style="color:#94A3B8">No available slots on this date.</p>';
       container.innerHTML = html;
     }
-
     function openBookingModal(date, startTime, endTime) {
       selectedStartTime = startTime;
       document.getElementById('bookingDate').value = date;
@@ -516,21 +482,11 @@ function getAvailableSlots(bookedSlots) {
   document.getElementById('visitorDesignation').value = loggedInVisitor.designation;
 }
       document.getElementById('bookingDesc').value = '';
-      document.getElementById('bookingWordCount').textContent = '0 / 25 words minimum';
       document.getElementById('bookingError').style.display = 'none';
       document.getElementById('bookingSuccess').style.display = 'none';
       document.getElementById('bookingModal').classList.add('active');
     }
-
     function closeBookingModal() { document.getElementById('bookingModal').classList.remove('active'); }
-
-    function updateBookingWordCount() {
-      const words = document.getElementById('bookingDesc').value.trim().split(/\s+/).filter(w => w).length;
-      const el = document.getElementById('bookingWordCount');
-      el.textContent = words + ' / 25 words minimum';
-      el.className = 'word-count' + (words < 25 ? ' error' : '');
-    }
-
     async function submitBooking() {
       const name = document.getElementById('visitorName').value.trim();
       const email = document.getElementById('visitorEmail').value.trim();
@@ -539,18 +495,20 @@ function getAvailableSlots(bookedSlots) {
       const start = document.getElementById('bookingStart').value;
       const end = document.getElementById('bookingEnd').value;
       const desc = document.getElementById('bookingDesc').value.trim();
-      const words = desc.split(/\s+/).filter(w => w).length;
       const errEl = document.getElementById('bookingError');
       const successEl = document.getElementById('bookingSuccess');
-
       if (!name || !email || !designation || !end || !desc) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
       if (!/\S+@\S+\.\S+/.test(email)) { errEl.style.display='block'; errEl.textContent='Please enter a valid email.'; return; }
-      if (words < 25) { errEl.style.display='block'; errEl.textContent='Description must be at least 25 words.'; return; }
       if (end <= start) { errEl.style.display='block'; errEl.textContent='End time must be after start time.'; return; }
-      if (start < '13:00' && end > '12:00') { errEl.style.display='block'; errEl.textContent='12:00 PM to 1:00 PM is lunch break. Please choose another time.'; return; }
-      const todayDateStrV = new Date().toISOString().split('T')[0];
+      
+      const today = new Date();
+      const offset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(today.getTime() + offset);
+      const todayDateStrV = istNow.toISOString().split('T')[0];
+      const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
+      
       if (date < todayDateStrV) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
-
+      if (date === todayDateStrV && start < currentTimeStr) { errEl.style.display='block'; errEl.textContent='Start time cannot be in the past.'; return; }
       const [existingSchedules, existingBookings] = await Promise.all([
   supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled'),
   supabaseFetch('booking_requests?requested_date=eq.' + date + '&status=neq.declined')
@@ -561,7 +519,6 @@ const allExisting = [...existingSchedules, ...existingBookings.map(b => ({
 }))];
 const overlap = allExisting.find(s => !(end + ':00' <= s.start_time || start + ':00' >= s.end_time));
 if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no longer available, please choose another slot.'; return; }
-
       errEl.style.display = 'none';
       await supabaseFetch('booking_requests', 'POST', {
         visitor_name: name + ' (' + designation + ')', visitor_email: email, requested_date: date,
@@ -575,7 +532,6 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
       successEl.textContent = 'Your request has been submitted. You will receive an email once the owner reviews it.';
       setTimeout(() => closeBookingModal(), 3000);
     }
-
     async function loadPastBookings() {
       const email = document.getElementById('pastEmail').value.trim();
       const container = document.getElementById('pastBookingsContainer');
@@ -583,21 +539,53 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
       container.innerHTML = '<p style="color:#94A3B8;font-size:13px">Loading...</p>';
       const data = await supabaseFetch('booking_requests?visitor_email=eq.' + encodeURIComponent(email) + '&order=created_at.desc');
       if (!data.length) { container.innerHTML = '<p style="color:#94A3B8;font-size:13px">No booking requests found for this email.</p>'; return; }
-   container.innerHTML = data.map(b => `
-    <div class="booking-card">
-      <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
-      <div style="font-size:13px;margin-bottom:4px">${b.requested_date} | ${b.start_time.slice(0,5)} — ${b.end_time.slice(0,5)}</div>
-      ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8;margin-bottom:4px">Remarks: ${b.owner_remarks}</div>` : ''}
-      ${b.withdrawal_reason ? `<div style="font-size:12px;color:#F59E0B;margin-bottom:4px">Withdrawal reason: ${b.withdrawal_reason}</div>` : ''}
-      ${b.status === 'pending' ? `
-        <button onclick="withdrawRequest('${b.id}')" style="margin-top:8px;padding:4px 12px;background:#EF4444;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Withdraw</button>
-      ` : (b.status === 'accepted' || b.status === 'accepted_with_remarks') ? `
-        <button onclick="openWithdrawalModal('${b.id}','${b.visitor_email || ''}','${b.visitor_name || ''}','${b.requested_date}','${b.start_time.slice(0,5)}','${b.end_time.slice(0,5)}')" style="margin-top:8px;padding:4px 12px;background:#F59E0B;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Request Withdrawal</button>
-      ` : ''}
-    </div>
-  `).join('');
+      
+      const now = new Date();
+      const offset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(now.getTime() + offset);
+      const todayStr = istNow.toISOString().split('T')[0];
+      const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
+      container.innerHTML = data.map(b => {
+        const isFuture = b.requested_date > todayStr || (b.requested_date === todayStr && b.start_time.slice(0, 5) > currentTimeStr);
+        const canWithdraw = isFuture && b.status !== 'withdrawn' && b.status !== 'declined';
+        
+        return `
+        <div class="booking-card" id="booking-card-${b.id}">
+          <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
+          <div style="font-size:13px;margin-bottom:4px">${b.requested_date} | ${b.start_time.slice(0,5)} — ${b.end_time.slice(0,5)}</div>
+          ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8;margin-bottom:8px">Remarks: ${b.owner_remarks}</div>` : ''}
+          ${canWithdraw ? `
+            <button class="btn btn-cancel" style="background:#EF4444; color:white; font-size:11px; padding:4px 8px; border-radius:4px; margin-top:6px; cursor:pointer;" onclick="withdrawRequest('${b.id}', '${b.requested_date}', '${b.start_time}', '${b.end_time}', '${b.visitor_email}', '${b.visitor_name.replace(/'/g,"\\'")}')">
+              Withdraw Request
+            </button>
+          ` : ''}
+        </div>
+      `;
+      }).join('');
     }
-
+    async function withdrawRequest(id, date, start, end, email, name) {
+      if (!confirm('Are you sure you want to withdraw this meeting request?')) return;
+      try {
+        await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
+        const schedules = await supabaseFetch('schedules?date=eq.' + date + '&start_time=eq.' + start + '&end_time=eq.' + end + '&visitor_email=eq.' + encodeURIComponent(email) + '&status=neq.cancelled');
+        if (schedules.length > 0) {
+          await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'Withdrawn by visitor' });
+        }
+        emailjs.send('service_88v685e', 'template_e4ekmie', {
+          visitor_name: name, visitor_email: email, requested_date: date,
+          start_time: start.slice(0,5), end_time: end.slice(0,5),
+          description: 'The visitor has withdrawn their meeting request.'
+        });
+        alert('Your request has been successfully withdrawn.');
+        loadPastBookings();
+        if (selectedDate) {
+          selectDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+        }
+      } catch (e) {
+        console.error('Withdraw failed:', e);
+        alert('Failed to withdraw request.');
+      }
+    }
     async function executeChatBooking(details) {
       try {
         if (loggedInVisitor) {
@@ -605,17 +593,15 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
   details.email = loggedInVisitor.email;
   details.designation = loggedInVisitor.designation;
 }
-        if (details.start < '13:00' && details.end > '12:00') return '❌ Sorry, 12:00 PM to 1:00 PM is lunch break. Please choose another time.';
         const now = new Date();
-        const currentDate = new Date(now.getTime() + (5.5 * 60 * 60 * 1000)).toISOString().split('T')[0];
-const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-const currentTime = istNow.toUTCString().slice(17, 22);
-
-if (details.date === currentDate && details.start < currentTime) {
-  return '❌ Sorry, this time has already passed. Please choose a future time slot.';
-}
-        const todayDateStrV2 = new Date().toISOString().split('T')[0];
-        if (details.date < todayDateStrV2) return '❌ Sorry, that date has already expired. Please choose today or a future date.';
+        const offset = 5.5 * 60 * 60 * 1000;
+        const istNow = new Date(now.getTime() + offset);
+        const currentDate = istNow.toISOString().split('T')[0];
+        const currentTime = istNow.toISOString().split('T')[1].slice(0, 5);
+        if (details.date < currentDate) return '❌ Sorry, that date has already expired. Please choose today or a future date.';
+        if (details.date === currentDate && details.start < currentTime) {
+          return '❌ Sorry, this time has already passed. Please choose a future time slot.';
+        }
         const [existingSchedules, existingBookings] = await Promise.all([
   supabaseFetch('schedules?date=eq.' + details.date + '&status=neq.cancelled'),
   supabaseFetch('booking_requests?requested_date=eq.' + details.date + '&status=neq.declined')
@@ -644,7 +630,6 @@ if (overlap) return '❌ Sorry, that time is no longer available. Please choose 
         return '❌ Something went wrong. Please try again.';
       }
     }
-
     async function sendMessage() {
       const input = document.getElementById('chatInput');
       const msg = input.value.trim();
@@ -654,12 +639,10 @@ if (overlap) return '❌ Sorry, that time is no longer available. Please choose 
       input.value = '';
       container.scrollTop = container.scrollHeight;
       chatHistory.push({ role: 'user', parts: [{ text: msg }] });
-
       const today = new Date();
       const dateStr = selectedDate ?
         `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}`
         : `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-
       const [scheduleSlots, bookingSlots] = await Promise.all([
   supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled'),
   supabaseFetch('booking_requests?requested_date=eq.' + dateStr + '&status=neq.declined')
@@ -669,21 +652,18 @@ const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
   end_time: b.end_time
 }))];
       const now = new Date();
-const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-const currentTime = istNow.toUTCString().slice(17, 22);
-
+      const offset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(now.getTime() + offset);
+      const currentTime = istNow.toISOString().split('T')[1].slice(0, 5);
 const filteredSlots = slots.filter(s => {
-  return !(dateStr === new Date(now.getTime() + (5.5 * 60 * 60 * 1000)).toISOString().split('T')[0] && s.start_time.slice(0,5) < currentTime);
+  return !(dateStr === istNow.toISOString().split('T')[0] && s.start_time.slice(0,5) < currentTime);
 });
-      // Available slots calculate cheyyi
 const allSlots = [];
 const bookedSlots = [];
-
 for (let h = 5; h < 23; h++) {
   const start = String(h).padStart(2,'0') + ':00:00';
   const end = String(h + 1).padStart(2,'0') + ':00:00';
-  const isLunch = (h === 12);
-  const isBooked = isLunch || slots.some(s =>
+  const isBooked = slots.some(s =>
     s.start_time < end && s.end_time > start
   );
   if (isBooked) {
@@ -692,121 +672,59 @@ for (let h = 5; h < 23; h++) {
     allSlots.push(`${start.slice(0,5)} - ${end.slice(0,5)}`);
   }
 }
-let visitorBookings = [];
-if (loggedInVisitor) {
-  visitorBookings = await supabaseFetch(
-    'booking_requests?visitor_email=eq.' +
-    encodeURIComponent(loggedInVisitor.email) +
-    '&order=created_at.desc'
-  );
-}
 const systemPrompt = `You are MyScheduler AI assistant. Today is ${dateStr} IST.
-Visitor's past booking requests: ${JSON.stringify(visitorBookings)}.
 The meeting owner is Ayyappa. Mention Ayyappa's name naturally in the beginning and final confirmation messages.
 Working hours: 5AM to 11PM. 
 Available slots: ${allSlots.length ? allSlots.join(', ') : 'None'}.
 Booked slots: ${bookedSlots.length ? bookedSlots.join(', ') : 'None'}.
-
 STRICT RULES:
-- Before collecting ANY details, first check if the requested time is in the past. Today is ${dateStr} and current time is ${new Date().toTimeString().slice(0,5)}. If requested slot is already passed, immediately say "Sorry, that time has already passed. Please choose a future slot." Do NOT ask for description or any details.
+- Before collecting ANY details, first check if the requested time is in the past. Today is ${dateStr} and current time is ${currentTime}. If requested slot is already passed, immediately say "Sorry, that time has already passed. Please choose a future slot." Do NOT ask for description or any details.
 - Reply in MAX 2 sentences. No exceptions.
 - Today's date is ${dateStr}. If user says "today", use this date. If "tomorrow", use next date. NEVER ask date again.
 - When listing available slots, list EACH slot individually from the available slots list above. NEVER merge them into ranges. NEVER include booked slots. at the same time, give reply as gunshorted(simply shorten).
 - If user asks available slots, list ONLY available slots.
 - If user asks booked/unavailable slots, list ONLY booked slots.
 - NEVER ask for name, email, or designation.
-- ONLY ask for details (start time, end time, reason min 25 words) when user EXPLICITLY says they want to book.
+- ONLY ask for details (start time, end time, reason) when user EXPLICITLY says they want to book. Do not require minimum word counts for the reason.
 - After collecting booking details, ask: "Would you like to confirm this meeting with Ayyappa?"
 - After user confirms, reply EXACTLY:
-[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE
-
-When visitor wants to withdraw a pending request, reply EXACTLY:
-[WITHDRAW] id=booking_request_id
-
-When visitor wants to request withdrawal for an accepted meeting, reply EXACTLY:
-[WITHDRAW_REQUEST] id=booking_request_id | reason=VALUE`;
+[BOOK] date=YYYY-MM-DD | start=HH:MM | end=HH:MM | desc=VALUE`;
       const loadingId = 'loading-' + Date.now();
       container.innerHTML += `<div class="message ai" id="${loadingId}"><div class="message-bubble">Checking...</div></div>`;
       container.scrollTop = container.scrollHeight;
-
       try {
+        const geminiApiKey = localStorage.getItem('gemini_api_key') || '';
+        const geminiModel = localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite';
+        
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ systemPrompt, messages: chatHistory })
+          body: JSON.stringify({ 
+            systemPrompt, 
+            messages: chatHistory,
+            geminiApiKey,
+            geminiModel
+          })
         });
         const data = await res.json();
-        document.getElementById(loadingId).remove();
+        document.getElementById(loadingId) && document.getElementById(loadingId).remove();
         const reply = data.reply || 'Sorry, I could not process that.';
         chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-
         if (reply.includes('[BOOK]')) {
-  const bookLine = reply.split('\n').find(l => l.includes('[BOOK]'));
-  const parse = (key) => {
-    const match = bookLine.match(new RegExp(key + '=([^|]+)'));
-    return match ? match[1].trim() : '';
-  };
-
-  const details = {
-    name: parse('name'),
-    email: parse('email'),
-    date: parse('date'),
-    start: parse('start'),
-    end: parse('end'),
-    desc: parse('desc')
-  };
-
-  const result = await executeChatBooking(details);
-  container.innerHTML += `<div class="message ai"><div class="message-bubble">${result}</div></div>`;
-
-} else if (reply.includes('[WITHDRAW]')) {
-
-  const line = reply.split('\n').find(l => l.includes('[WITHDRAW]'));
-  const idMatch = line && line.match(/id=([^\s|]+)/);
-
-  if (idMatch) {
-    await supabaseFetch('booking_requests?id=eq.' + idMatch[1], 'PATCH', {
-      status: 'withdrawn'
-    });
-
-    container.innerHTML += `<div class="message ai"><div class="message-bubble">✅ Your request has been withdrawn successfully.</div></div>`;
-    loadPastBookings();
-  }
-
-} else if (reply.includes('[WITHDRAW_REQUEST]')) {
-
-  const line = reply.split('\n').find(l => l.includes('[WITHDRAW_REQUEST]'));
-  const idMatch = line && line.match(/id=([^\s|]+)/);
-  const reasonMatch = line && line.match(/reason=(.+)/);
-
-  if (idMatch && reasonMatch) {
-    const reqData = await supabaseFetch('booking_requests?id=eq.' + idMatch[1]);
-
-    if (reqData[0]) {
-      const r = reqData[0];
-
-      await supabaseFetch('booking_requests?id=eq.' + idMatch[1], 'PATCH', {
-        status: 'withdrawal_requested',
-        withdrawal_reason: reasonMatch[1].trim()
-      });
-
-      emailjs.send('service_88v685e', 'template_u0x07ob', {
-        visitor_name: r.visitor_name,
-        visitor_email: r.visitor_email,
-        requested_date: r.requested_date,
-        start_time: r.start_time,
-        end_time: r.end_time,
-        description: 'Withdrawal requested. Reason: ' + reasonMatch[1].trim()
-      });
-
-      container.innerHTML += `<div class="message ai"><div class="message-bubble">✅ Your withdrawal request has been sent to the owner.</div></div>`;
-      loadPastBookings();
-    }
-  }
-
-} else {
-  container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
-}
+          const bookLine = reply.split('\n').find(l => l.includes('[BOOK]'));
+          const parse = (key) => {
+            const match = bookLine.match(new RegExp(key + '=([^|]+)'));
+            return match ? match[1].trim() : '';
+          };
+          const details = {
+            name: parse('name'), email: parse('email'), date: parse('date'),
+            start: parse('start'), end: parse('end'), desc: parse('desc')
+          };
+          const result = await executeChatBooking(details);
+          container.innerHTML += `<div class="message ai"><div class="message-bubble">${result}</div></div>`;
+        } else {
+          container.innerHTML += `<div class="message ai"><div class="message-bubble">${reply}</div></div>`;
+        }
         container.scrollTop = container.scrollHeight;
       } catch(e) {
         document.getElementById(loadingId) && document.getElementById(loadingId).remove();
@@ -824,104 +742,31 @@ When visitor wants to request withdrawal for an accepted meeting, reply EXACTLY:
   recognition.lang = 'en-IN';
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
-
   const btn = document.getElementById('voiceBtn');
   btn.innerHTML = '<i class="fas fa-stop"></i>';
   btn.style.background = '#EF4444';
-
   recognition.start();
-
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
     document.getElementById('chatInput').value = transcript;
     btn.innerHTML = '<i class="fas fa-microphone"></i>';
-btn.style.background = '#334155';
-sendMessage();
+    btn.style.background = '#334155';
   };
-
   recognition.onerror = () => {
     btn.innerHTML = '<i class="fas fa-microphone"></i>';
-btn.style.background = '#334155';
+    btn.style.background = '#334155';
   };
-
   recognition.onend = () => {
     btn.innerHTML = '<i class="fas fa-microphone"></i>';
-btn.style.background = '#334155';
+    btn.style.background = '#334155';
   };
 }
 const savedVisitor = localStorage.getItem('loggedInVisitor');
-
 if (savedVisitor) {
   loggedInVisitor = JSON.parse(savedVisitor);
   showMainApp();
 }
-let currentWithdrawalId = null;
-    let currentWithdrawalEmail = null;
-    let currentWithdrawalName = null;
-    let currentWithdrawalDate = null;
-    let currentWithdrawalStart = null;
-    let currentWithdrawalEnd = null;
-
-    function openWithdrawalModal(id, email, name, date, start, end) {
-      currentWithdrawalId = id;
-      currentWithdrawalEmail = email;
-      currentWithdrawalName = name;
-      currentWithdrawalDate = date;
-      currentWithdrawalStart = start;
-      currentWithdrawalEnd = end;
-      document.getElementById('withdrawalReason').value = '';
-      document.getElementById('withdrawalModal').classList.add('active');
-    }
-
-    function closeWithdrawalModal() {
-      document.getElementById('withdrawalModal').classList.remove('active');
-    }
-
-    async function withdrawRequest(id) {
-      if (!confirm('Are you sure you want to withdraw this request?')) return;
-      const result = await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
-      console.log('Withdraw result:', result);
-      const emailInput = document.getElementById('pastEmail');
-      const visitorEmail = emailInput ? emailInput.value.trim() : '';
-      alert('Your request has been withdrawn successfully.');
-      await loadPastBookings();
-    }
-
-    async function submitWithdrawal() {
-      const reason = document.getElementById('withdrawalReason').value.trim();
-      if (!reason) { alert('Please provide a reason for withdrawal.'); return; }
-      const result = await supabaseFetch('booking_requests?id=eq.' + currentWithdrawalId, 'PATCH', {
-        status: 'withdrawal_requested',
-        withdrawal_reason: reason
-      });
-      console.log('Withdrawal request result:', result);
-      emailjs.send('service_88v685e', 'template_u0x07ob', {
-        visitor_name: currentWithdrawalName || 'Visitor',
-        visitor_email: currentWithdrawalEmail,
-        requested_date: currentWithdrawalDate,
-        start_time: currentWithdrawalStart,
-        end_time: currentWithdrawalEnd,
-        description: 'Withdrawal requested by visitor. Reason: ' + reason
-      });
-      closeWithdrawalModal();
-      alert('Your withdrawal request has been sent to the owner.');
-      loadPastBookings();
-    }
   </script>
   </div>
-  <div class="modal-overlay" id="withdrawalModal">
-  <div class="modal" style="width:400px">
-    <h3>Request Withdrawal</h3>
-    <p style="color:#94A3B8;font-size:13px;margin-bottom:16px">Please provide a reason for withdrawing from this accepted meeting.</p>
-    <div class="form-group">
-      <label>Reason *</label>
-      <textarea id="withdrawalReason" style="height:80px" placeholder="Why do you want to withdraw from this meeting?"></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-secondary" onclick="closeWithdrawalModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitWithdrawal()">Send Request</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
