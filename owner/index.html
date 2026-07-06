@@ -89,6 +89,128 @@
       <button class="btn btn-secondary" onclick="copyBookingLink()">Copy Booking Link</button>
       <button class="btn btn-secondary" onclick="openRequestsDrawer()">Requests <span class="badge" id="badge">0</span></button>
       <button class="btn btn-primary" onclick="openAddSlot()">+ Add to Schedule</button>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="panel">
+      <h2>Calendar</h2>
+      <div class="calendar-header">
+        <button onclick="changeMonth(-1)">&#8592;</button>
+        <span id="monthYear"></span>
+        <button onclick="changeMonth(1)">&#8594;</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <button class="btn btn-secondary" style="width:100%; margin-top:12px;" onclick="openChatHistory()">📜 Chat History</button>
+    </div>
+    <div class="panel">
+      <h2>Schedule for <span id="selectedDateLabel">Today</span></h2>
+      <div id="slotsContainer"><p style="color:#94A3B8">Select a date to view slots.</p></div>
+      <div class="status-counts">
+        <div class="count-item completed"><div class="count-num" id="countCompleted">0</div><div class="count-label">Completed</div></div>
+        <div class="count-item rescheduled"><div class="count-num" id="countRescheduled">0</div><div class="count-label">Rescheduled</div></div>
+        <div class="count-item cancelled"><div class="count-num" id="countCancelled">0</div><div class="count-label">Cancelled</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>AI Assistant</h2>
+      <div class="chat-messages" id="chatMessages">
+        <div class="message ai"><div class="message-bubble">Hi! I'm your scheduling assistant. Ask me anything about your schedule!</div></div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter') sendMessage()" />
+        <button id="micBtn" onclick="toggleVoiceInput()" style="background:#334155;color:#F1F5F9;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:16px;"><i class="fas fa-microphone"></i></button>
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+  <!-- MoM Modal -->
+  <div class="modal-overlay" id="momModal">
+    <div class="modal" style="width:450px">
+      <h3>Minutes of Meeting</h3>
+      <div class="error-msg" id="momError"></div>
+      <div class="form-group">
+        <label>Enter Minutes of Meeting (minimum 30 words) *</label>
+        <textarea id="momText" oninput="updateMomCount()" style="height:160px" placeholder="Describe the meeting minutes here..."></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+          <button id="momVoiceBtn" onclick="toggleMomVoiceInput(event)" style="padding:6px 12px; background:#334155; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-microphone"></i> Record Minutes
+          </button>
+          <div class="word-count" id="momCount">0 / 30 words minimum</div>
+        </div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeMomModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitMom()">Submit & Complete</button>
+      </div>
+    </div>
+  </div>
+  <!-- Cancel Reason Modal -->
+  <div class="modal-overlay" id="cancelReasonModal">
+    <div class="modal" style="width:450px">
+      <h3>Cancel Meeting</h3>
+      <div class="error-msg" id="cancelReasonError"></div>
+      <div class="form-group">
+        <label>Reason for Cancellation *</label>
+        <textarea id="cancelReasonText" placeholder="Why are you cancelling this meeting?"></textarea>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeCancelReasonModal()">Back</button>
+        <button class="btn btn-cancel" onclick="submitCancelReason()">Confirm Cancel</button>
+      </div>
+    </div>
+  </div>
+  <!-- Reschedule Modal -->
+  <div class="modal-overlay" id="rescheduleModal">
+    <div class="modal" style="width:450px">
+      <h3>Reschedule Meeting</h3>
+      <div class="error-msg" id="rescheduleError"></div>
+      <div class="form-group">
+        <label>New Date</label>
+        <input type="date" id="rescheduleDate" />
+      </div>
+      <div class="form-group">
+        <label>New Start Time</label>
+        <input type="time" id="rescheduleStart" />
+      </div>
+      <div class="form-group">
+        <label>New End Time</label>
+        <input type="time" id="rescheduleEnd" />
+      </div>
+      <div class="form-group">
+        <label>Reason for Reschedule</label>
+        <textarea id="rescheduleReason" placeholder="Why are you rescheduling this meeting?"></textarea>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitReschedule()">Confirm Reschedule</button>
+      </div>
+    </div>
+  </div>
+  <!-- Chat History Modal -->
+  <div class="modal-overlay" id="chatHistoryModal">
+    <div class="modal" style="width:500px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>Chat History</h3>
+        <button class="btn btn-secondary" onclick="closeChatHistory()">Close</button>
+      </div>
+      <input type="date" id="chatHistoryDate" onchange="loadChatHistoryForDate()" style="width:100%; padding:10px; background:#0F172A; border:1px solid #334155; border-radius:8px; color:#F1F5F9; margin-bottom:16px;" />
+      <div id="chatHistoryContainer" style="max-height:400px; overflow-y:auto;"></div>
+    </div>
+  </div>
+  <!-- Daily Report Modal -->
+<div class="modal-overlay" id="dailyReportModal">
+  <div class="modal" style="width:560px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3>📊 Daily Report</h3>
+      <button class="btn btn-secondary" onclick="closeDailyReport()">Close</button>
+    </div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+      <input type="date" id="reportDate" style="flex:1;padding:10px;background:#0F172A;border:1px solid #334155;border-radius:8px;color:#F1F5F9;" />
+      <button class="btn btn-primary" onclick="generateReport()">Generate</button>
+    </div>
+    <div id="reportContainer" style="max-height:500px;overflow-y:auto;">
+      <p style="color:#94A3B8">Select a date and click Generate.</p>
+    </div>
   </div>
 </div>
   <!-- Admin Verification Modal -->
@@ -287,6 +409,78 @@
       document.getElementById('settingsModel').value = model;
       document.getElementById('settingsModal').classList.add('active');
     }
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('active');
+    }
+    function saveSettings() {
+      const key = document.getElementById('settingsApiKey').value.trim();
+      const model = document.getElementById('settingsModel').value.trim() || 'gemini-3.1-flash-lite';
+      localStorage.setItem('gemini_api_key', key);
+      localStorage.setItem('gemini_model', model);
+      closeSettingsModal();
+      alert('Settings saved successfully!');
+    }
+    async function supabaseFetch(path, method = 'GET', body = null) {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+        method,
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': method === 'POST' ? 'return=representation' : ''
+        },
+        body: body ? JSON.stringify(body) : null
+      });
+      const text = await res.text();
+      return text ? JSON.parse(text) : {};
+    }
+    async function loadSlots(dateStr) {
+      const data = await supabaseFetch('schedules?date=eq.' + dateStr + '&order=start_time');
+      renderSlots(data);
+      loadStatusCounts();
+    }
+    async function loadStatusCounts() {
+      const completed = await supabaseFetch('schedules?status=eq.completed&select=id');
+      const rescheduled = await supabaseFetch('schedules?status=eq.rescheduled&select=id');
+      const cancelled = await supabaseFetch('schedules?status=eq.cancelled&select=id');
+      document.getElementById('countCompleted').textContent = completed.length || 0;
+      document.getElementById('countRescheduled').textContent = rescheduled.length || 0;
+      document.getElementById('countCancelled').textContent = cancelled.length || 0;
+    }
+    function toIST(timeStr) { return timeStr ? timeStr.slice(0,5) : ''; }
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function toggleReason(id) {
+      const box = document.getElementById('reason-' + id);
+      if (box) box.classList.toggle('active');
+    }
+    function toggleMom(id) {
+      const box = document.getElementById('mom-' + id);
+      if (box) box.classList.toggle('active');
+    }
+    function toggleRescheduleReason(id) {
+      const box = document.getElementById('reschedule-reason-' + id);
+      if (box) box.classList.toggle('active');
+    }
+    function toggleCancelReason(id) {
+      const box = document.getElementById('cancel-reason-' + id);
+      if (box) box.classList.toggle('active');
+    }
+    function renderSlots(slots) {
+      const container = document.getElementById('slotsContainer');
+      if (!slots || !slots.length) { container.innerHTML = '<p style="color:#94A3B8">No slots for this date.</p>'; return; }
+      container.innerHTML = slots.map(s => {
+        const cleanDesc = (s.description || '').replace(/\s*\(Booked by Owner\)/g, '').replace(/\s*\(Booked via AI by Owner\)/g, '').replace(/\s*\(Booked by Visitor - [^\)]+\)/g, '');
+        return `
+        <div class="slot-card ${s.status}">
+          <div class="slot-title-row">
+            <div class="slot-title">
+              ${s.title}
+              <span style="font-weight:normal; font-size:12px; color:#94A3B8; margin-left:6px;">
+                (${s.created_by === 'owner' ? 'Booked by Owner' : 'Booked by Visitor'})
+              </span>
             </div>
             <button class="btn-reason" onclick="toggleReason('${s.id}')">📝 Agenda</button>
           </div>
