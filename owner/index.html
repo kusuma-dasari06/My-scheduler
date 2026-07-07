@@ -81,7 +81,10 @@
 </head>
 <body>
   <div class="header">
-    <h1>MyScheduler</h1>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <h1>MyScheduler</h1>
+      <button class="btn btn-secondary" onclick="openVisitorsModal()">👥 Visitors</button>
+    </div>
     <div class="header-btns">
       <button class="btn btn-secondary" onclick="openDailyReport()">📊 Daily Report</button>
       <button class="btn btn-secondary" onclick="openAdminPasswordModal()">⚙️ Admin</button>
@@ -339,6 +342,17 @@
         <button class="btn btn-secondary" onclick="closeRequestsDrawer()">Close</button>
       </div>
       <div id="requestsContainer"><p style="color:#94A3B8">Loading...</p></div>
+    </div>
+  </div>
+  <!-- Registered Visitors Modal -->
+  <div class="modal-overlay" id="visitorsModal">
+    <div class="modal" style="width:560px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>👥 Registered Visitors</h3>
+        <button class="btn btn-secondary" onclick="closeVisitorsModal()">Close</button>
+      </div>
+      <input type="text" id="visitorSearchInput" placeholder="Search by name or email..." oninput="filterVisitorsList()" style="width:100%; padding:10px; background:#0F172A; border:1px solid #334155; border-radius:8px; color:#F1F5F9; margin-bottom:16px;" />
+      <div id="visitorsContainer" style="max-height:450px; overflow-y:auto;"><p style="color:#94A3B8">Loading...</p></div>
     </div>
   </div>
   <!-- Remarks Modal -->
@@ -1289,6 +1303,45 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
       const withdrawReqs = await supabaseFetch('booking_requests?status=eq.withdraw_requested&select=id');
       const totalPending = (data.length || 0) + (withdrawReqs.length || 0);
       document.getElementById('badge').textContent = totalPending || 0;
+    }
+    let allRegisteredVisitors = [];
+
+    async function openVisitorsModal() {
+      document.getElementById('visitorsModal').classList.add('active');
+      document.getElementById('visitorSearchInput').value = '';
+      const container = document.getElementById('visitorsContainer');
+      container.innerHTML = '<p style="color:#94A3B8">Loading...</p>';
+      try {
+        allRegisteredVisitors = await supabaseFetch('visitors?select=name,email,designation&order=name');
+        renderVisitorsList(allRegisteredVisitors);
+      } catch (e) {
+        container.innerHTML = '<p style="color:#EF4444">Error loading visitors.</p>';
+      }
+    }
+
+    function closeVisitorsModal() {
+      document.getElementById('visitorsModal').classList.remove('active');
+    }
+
+    function renderVisitorsList(visitors) {
+      const container = document.getElementById('visitorsContainer');
+      if (!visitors.length) { container.innerHTML = '<p style="color:#94A3B8">No registered visitors found.</p>'; return; }
+      container.innerHTML = visitors.map(v => `
+        <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:10px">
+          <div style="font-weight:bold;font-size:14px;margin-bottom:4px">${escapeHtml(v.name)}</div>
+          <div style="font-size:13px;color:#94A3B8;margin-bottom:2px">📧 ${escapeHtml(v.email)}</div>
+          ${v.designation ? `<div style="font-size:13px;color:#94A3B8">💼 ${escapeHtml(v.designation)}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function filterVisitorsList() {
+      const q = document.getElementById('visitorSearchInput').value.trim().toLowerCase();
+      if (!q) { renderVisitorsList(allRegisteredVisitors); return; }
+      const filtered = allRegisteredVisitors.filter(v =>
+        (v.name || '').toLowerCase().includes(q) || (v.email || '').toLowerCase().includes(q)
+      );
+      renderVisitorsList(filtered);
     }
     function openRequestsDrawer() {
       document.getElementById('requestsDrawer').classList.add('active');
