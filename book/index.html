@@ -860,6 +860,7 @@ STRICT RULES:
         btn.style.background = '#334155';
       }
     }
+    const savedVisitor = localStorage.getItem('loggedInVisitor');
 if (savedVisitor) {
   loggedInVisitor = JSON.parse(savedVisitor);
   showMainApp();
