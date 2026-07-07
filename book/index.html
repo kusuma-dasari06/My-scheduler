@@ -153,6 +153,10 @@ transition:.2s;color:white;border:none;border-radius:8px;cursor:pointer;">
         <button onclick="changeMonth(1)">&#8594;</button>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="past-bookings-section" id="meetingHistorySection" style="display:none;">
+        <h3>📅 My Meeting History</h3>
+        <div id="meetingHistoryContainer"><p style="color:#94A3B8;font-size:13px">Loading...</p></div>
+      </div>
       <div class="past-bookings-section">
         <h3>View My Past Requests</h3>
         <div class="past-input">
@@ -328,6 +332,31 @@ function showMainApp() {
     }
   }
   renderCalendar().catch(console.error);
+  loadMeetingHistory();
+}
+
+async function loadMeetingHistory() {
+  if (!loggedInVisitor) return;
+  const section = document.getElementById('meetingHistorySection');
+  const container = document.getElementById('meetingHistoryContainer');
+  section.style.display = 'block';
+  container.innerHTML = '<p style="color:#94A3B8;font-size:13px">Loading...</p>';
+  try {
+    const data = await supabaseFetch('schedules?visitor_email=eq.' + encodeURIComponent(loggedInVisitor.email) + '&order=date.desc,start_time.desc');
+    if (!data.length) { container.innerHTML = '<p style="color:#94A3B8;font-size:13px">No meeting history found.</p>'; return; }
+    container.innerHTML = data.map(m => `
+      <div class="booking-card">
+        <div class="booking-status status-${m.status}">${m.status.replace(/_/g,' ')}</div>
+        <div style="font-weight:bold;font-size:13px;margin-bottom:4px">${escapeHtml(m.title)}</div>
+        <div style="font-size:13px;margin-bottom:4px">${m.date} | ${m.start_time.slice(0,5)} — ${m.end_time.slice(0,5)}</div>
+        ${m.status === 'cancelled' && m.cancel_reason ? `<div style="font-size:12px;color:#EF4444;margin-bottom:4px">Cancel Reason: ${escapeHtml(m.cancel_reason)}</div>` : ''}
+        ${m.status === 'rescheduled' && m.reschedule_reason ? `<div style="font-size:12px;color:#F97316;margin-bottom:4px">Reschedule Reason: ${escapeHtml(m.reschedule_reason)}</div>` : ''}
+        ${m.status === 'completed' && m.minutes_of_meeting ? `<div style="font-size:12px;color:#94A3B8;margin-bottom:4px">MoM: ${escapeHtml(m.minutes_of_meeting)}</div>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    container.innerHTML = '<p style="color:#EF4444;font-size:13px">Error loading history.</p>';
+  }
 }
 function logout() {
   localStorage.removeItem('loggedInVisitor');
@@ -344,6 +373,11 @@ function toggleProfile() {
     let selectedDate = null;
     let selectedStartTime = null;
     let chatHistory = [];
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    async function supabaseFetch(path, method = 'GET', body = null) {
     async function supabaseFetch(path, method = 'GET', body = null) {
       const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
         method,
