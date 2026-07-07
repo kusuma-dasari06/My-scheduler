@@ -154,16 +154,14 @@ transition:.2s;color:white;border:none;border-radius:8px;cursor:pointer;">
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
       <div class="past-bookings-section" id="meetingHistorySection" style="display:none;">
+        <div class="past-input">
+  <button onclick="loadMeetingHistory()" style="width:100%;padding:8px;background:#334155;color:#F1F5F9;border:none;border-radius:8px;cursor:pointer;">Search My History</button>
+</div>
         <h3>📅 My Meeting History</h3>
         <div id="meetingHistoryContainer"><p style="color:#94A3B8;font-size:13px">Loading...</p></div>
       </div>
       <div class="past-bookings-section">
         <h3>View My Past Requests</h3>
-        <div class="past-bookings-section" style="margin-top:16px">
-  <h3>My Meeting History</h3>
-  <button onclick="loadMeetingHistory()" style="width:100%;padding:8px;background:#334155;color:#F1F5F9;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px">Search</button>
-  <div id="meetingHistoryContainer"></div>
-</div>
         <div class="past-input">
           <input type="email" id="pastEmail" placeholder="Enter your email" />
           <button onclick="loadPastBookings()">Search</button>
