@@ -382,7 +382,7 @@ const bookings = await supabaseFetch(
   'booking_requests?visitor_email=eq.' + encodeURIComponent(loggedInVisitor.email) +
   '&requested_date=gte.' + monthStr + '-01' +
   '&requested_date=lt.' + nextMonth + '-01' +
-  '&status=neq.declined'
+  '&status=in.(pending,accepted,accepted_with_remarks,reschedule_requested,withdraw_requested,withdrawal_declined)'
 );
 pastBookedDates = Array.isArray(bookings) ? bookings.map(b => b.requested_date) : [];
 console.log('Past booked dates:',pastBookedDates);
@@ -427,7 +427,7 @@ console.log('Past booked dates:',pastBookedDates);
       const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const [scheduleSlots, bookingSlots] = await Promise.all([
   supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled'),
-  supabaseFetch('booking_requests?requested_date=eq.' + dateStr + '&status=neq.declined')
+  supabaseFetch('booking_requests?requested_date=eq.' + dateStr + '&status=in.(pending,accepted,accepted_with_remarks,reschedule_requested,withdraw_requested,withdrawal_declined)')
 ]);
 const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
   start_time: b.start_time,
@@ -514,7 +514,7 @@ function getAvailableSlots(bookedSlots) {
       if (date === todayDateStrV && start < currentTimeStr) { errEl.style.display='block'; errEl.textContent='Start time cannot be in the past.'; return; }
       const [existingSchedules, existingBookings] = await Promise.all([
   supabaseFetch('schedules?date=eq.' + date + '&status=neq.cancelled'),
-  supabaseFetch('booking_requests?requested_date=eq.' + date + '&status=neq.declined')
+  supabaseFetch('booking_requests?requested_date=eq.' + date + '&status=in.(pending,accepted,accepted_with_remarks,reschedule_requested,withdraw_requested,withdrawal_declined)')
 ]);
 const allExisting = [...existingSchedules, ...existingBookings.map(b => ({
   start_time: b.start_time.length === 5 ? b.start_time + ':00' : b.start_time,
@@ -629,24 +629,6 @@ async function requestWithdraw(id, date, start, end, email, name) {
     alert('Failed to request withdrawal.');
   }
 }
-    async function requestWithdraw(id, date, start, end, email, name) {
-      if (!confirm('Are you sure you want to request withdrawal for this accepted meeting? This will send a request to Ayyappa.')) return;
-      try {
-        await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdraw_requested' });
-        
-        emailjs.send('service_88v685e', 'template_e4ekmie', {
-          visitor_name: name, visitor_email: email, requested_date: date,
-          start_time: start.slice(0,5), end_time: end.slice(0,5),
-          description: 'The visitor has requested to withdraw their accepted meeting.'
-        });
-        
-        alert('Your withdraw request has been submitted to Ayyappa.');
-        loadPastBookings();
-      } catch (e) {
-        console.error('Withdraw request failed:', e);
-        alert('Failed to request withdrawal.');
-      }
-    }
     async function executeChatBooking(details) {
       try {
         if (loggedInVisitor) {
@@ -665,7 +647,7 @@ async function requestWithdraw(id, date, start, end, email, name) {
         }
         const [existingSchedules, existingBookings] = await Promise.all([
   supabaseFetch('schedules?date=eq.' + details.date + '&status=neq.cancelled'),
-  supabaseFetch('booking_requests?requested_date=eq.' + details.date + '&status=neq.declined')
+  supabaseFetch('booking_requests?requested_date=eq.' + details.date + '&status=in.(pending,accepted,accepted_with_remarks,reschedule_requested,withdraw_requested,withdrawal_declined)')
 ]);
 const allExisting = [...existingSchedules, ...existingBookings.map(b => ({
   start_time: b.start_time, end_time: b.end_time
@@ -706,7 +688,7 @@ if (overlap) return '❌ Sorry, that time is no longer available. Please choose 
         : `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
       const [scheduleSlots, bookingSlots] = await Promise.all([
   supabaseFetch('schedules?date=eq.' + dateStr + '&status=neq.cancelled'),
-  supabaseFetch('booking_requests?requested_date=eq.' + dateStr + '&status=neq.declined')
+  supabaseFetch('booking_requests?requested_date=eq.' + dateStr + '&status=in.(pending,accepted,accepted_with_remarks,reschedule_requested,withdraw_requested,withdrawal_declined)')
 ]);
 const slots = [...scheduleSlots, ...bookingSlots.map(b => ({
   start_time: b.start_time,
