@@ -998,15 +998,21 @@ function toggleMomVoiceInput(e) {
       const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
       const slots = await supabaseFetch('schedules?status=neq.cancelled&order=date,start_time');
       const pending = await supabaseFetch('booking_requests?status=eq.pending');
+      const registeredVisitors = await supabaseFetch('visitors?select=name,email&order=name');
       const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST and the current time is ${currentTimeStr} IST. Working hours: 5AM to 11PM IST.
       Never book or reschedule any slot to a date before today (${todayStr}). Only mention this if the owner specifically tries to use a past date — do not mention it in unrelated replies.
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
 Pending booking requests: ${JSON.stringify(pending)}
+Registered visitors (name and email) you can match against: ${JSON.stringify(registeredVisitors)}
 LANGUAGE RULE: Always reply in the same language and script the owner used in their message. If the owner writes in Telugu (Telugu script), reply in Telugu (Telugu script). If the owner writes in English, reply in English. If the owner writes in Tenglish (Telugu words written in English/Latin script, e.g., 'meeting complete chey' or 'yela unnavu'), you MUST reply in Tenglish (Telugu words in English/Latin script). Do not translate Tenglish to Telugu script or English.
 You can have a normal friendly conversation (greetings, small talk) and also help manage the schedule. Reply in plain text only, no stars, no markdown formatting. Keep replies short and directly answer only what was asked.
 When speaking to the owner, never read out internal slot IDs, request IDs, or raw database identifiers in your reply — refer to meetings naturally by title, date, and time instead (e.g. "your meeting with Sravani at 5 PM" not "slot ID abc123"). Keep confirmations conversational and natural, as if speaking out loud.
-When the owner wants to book/add a new slot, first collect title, date, start time, end time, and a description. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
+When the owner wants to book/add a new slot WITHOUT any visitor (internal/personal slot), first collect title, date, start time, end time, and a description. Ask for each piece of information separately if missing, then confirm with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
 [ACTION:BOOK:title:date:HH:MM:HH:MM:Description]
+
+When the owner wants to book a meeting WITH a visitor (owner mentions a person's name or says "meeting with X"), first ask if this visitor is a "registered" visitor (check the Registered visitors list above by name) or an "unregistered/guest" visitor. If registered, find their exact email from the list above — do not ask the owner for the email, just confirm the match (e.g. "Is this Ramesh (ramesh@email.com)?"). If unregistered, ask the owner for the visitor's name and email. Then collect title, date, start time, end time, and description as usual. Confirm all details with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
+[ACTION:BOOK_WITH_VISITOR:title:date:HH:MM:HH:MM:visitor_type:visitor_name:visitor_email:Description]
+(visitor_type must be exactly "registered" or "unregistered")
 When the owner wants to cancel a slot, identify the correct slot id from the schedule data above, ask the owner for a reason for cancellation, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:CANCEL:slot_id:reason]
 When the owner wants to edit a slot's title, identify the slot id, confirm the new title with the owner, then once confirmed reply with EXACTLY:
@@ -1090,6 +1096,53 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
               description: rawDesc,
               category: 'Meeting', status: 'upcoming', created_by: 'owner'
             });
+            reloadSlots();
+          }
+        }
+        if (reply.includes('[ACTION:BOOK_WITH_VISITOR:')) {
+          const match = reply.match(/\[ACTION:BOOK_WITH_VISITOR:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*):([^:]+):([^:]+):([^:]+):([^\]]*)\]/);
+          if (match) {
+            const bTitle = match[1];
+            const bDate = match[2];
+            const newStart = normalizeTime(match[3]);
+            const newEnd = normalizeTime(match[4]);
+            const vType = match[5].trim();
+            const vName = match[6].trim();
+            const vEmail = match[7].trim();
+            const vDesc = match[8] || '';
+
+            const today = new Date();
+            const offset = 5.5 * 60 * 60 * 1000;
+            const istNow = new Date(today.getTime() + offset);
+            const todayDateStrBV = istNow.toISOString().split('T')[0];
+            const currentTimeStrBV = istNow.toISOString().split('T')[1].slice(0, 5);
+            if (bDate < todayDateStrBV) {
+              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that date has already passed. Please choose today or a future date.</div></div>`;
+              container.scrollTop = container.scrollHeight;
+              return;
+            }
+            if (bDate === todayDateStrBV && newStart < currentTimeStrBV) {
+              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, that time has already passed. Please choose a future slot.</div></div>`;
+              container.scrollTop = container.scrollHeight;
+              return;
+            }
+
+            await supabaseFetch('schedules', 'POST', {
+              title: bTitle, date: bDate, start_time: newStart, end_time: newEnd,
+              description: vDesc,
+              category: 'Meeting', status: 'upcoming', created_by: 'owner',
+              visitor_type: vType === 'registered' ? 'registered' : 'unregistered',
+              visitor_name: vName,
+              visitor_email: vEmail
+            });
+
+            emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+              visitor_name: vName,
+              visitor_email: vEmail,
+              requested_date: bDate, start_time: newStart, end_time: newEnd,
+              description: 'A meeting "' + bTitle + '" has been scheduled with you by Ayyappa. ' + (vDesc ? ('Details: ' + vDesc) : '')
+            });
+
             reloadSlots();
           }
         }
