@@ -276,6 +276,29 @@
       <h3>Add to Schedule</h3>
       <div class="error-msg" id="slotError"></div>
       <div class="form-group">
+        <label>Meeting With</label>
+        <select id="visitorTypeSelect" onchange="toggleVisitorFields()">
+          <option value="none">No Visitor (Internal/Personal)</option>
+          <option value="registered">Registered Visitor</option>
+          <option value="unregistered">Unregistered Visitor (Guest)</option>
+        </select>
+      </div>
+      <div class="form-group" id="registeredVisitorGroup" style="display:none;">
+        <label>Select Registered Visitor</label>
+        <select id="registeredVisitorSelect">
+          <option value="">Loading visitors...</option>
+        </select>
+      </div>
+      <div class="form-group" id="unregisteredVisitorGroup" style="display:none;">
+        <label>Visitor Name</label>
+        <input type="text" id="unregVisitorName" placeholder="Enter visitor name" />
+        <label style="margin-top:10px;">Visitor Email</label>
+        <input type="email" id="unregVisitorEmail" placeholder="Enter visitor email" />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="slotCategory">
+      <div class="form-group">
         <label>Category</label>
         <select id="slotCategory">
           <option>Meeting</option>
@@ -766,7 +789,37 @@ function toggleMomVoiceInput(e) {
       navigator.clipboard.writeText(window.location.origin + '/book');
       alert('Link copied!');
     }
-    function openAddSlot() { document.getElementById('addSlotModal').classList.add('active'); }
+    async function openAddSlot() {
+      document.getElementById('visitorTypeSelect').value = 'none';
+      document.getElementById('registeredVisitorGroup').style.display = 'none';
+      document.getElementById('unregisteredVisitorGroup').style.display = 'none';
+      document.getElementById('unregVisitorName').value = '';
+      document.getElementById('unregVisitorEmail').value = '';
+      document.getElementById('addSlotModal').classList.add('active');
+    }
+
+    function toggleVisitorFields() {
+      const type = document.getElementById('visitorTypeSelect').value;
+      document.getElementById('registeredVisitorGroup').style.display = type === 'registered' ? 'block' : 'none';
+      document.getElementById('unregisteredVisitorGroup').style.display = type === 'unregistered' ? 'block' : 'none';
+      if (type === 'registered') loadRegisteredVisitorsDropdown();
+    }
+
+    async function loadRegisteredVisitorsDropdown() {
+      const select = document.getElementById('registeredVisitorSelect');
+      select.innerHTML = '<option value="">Loading...</option>';
+      try {
+        const visitors = await supabaseFetch('visitors?select=name,email&order=name');
+        if (!visitors.length) {
+          select.innerHTML = '<option value="">No registered visitors found</option>';
+          return;
+        }
+        select.innerHTML = '<option value="">-- Select Visitor --</option>' +
+          visitors.map(v => `<option value="${v.email}">${v.name} (${v.email})</option>`).join('');
+      } catch (e) {
+        select.innerHTML = '<option value="">Error loading visitors</option>';
+      }
+    }
     function closeAddSlot() { document.getElementById('addSlotModal').classList.remove('active'); }
     async function submitSlot() {
       const title = document.getElementById('slotTitle').value.trim();
@@ -792,11 +845,41 @@ function toggleMomVoiceInput(e) {
       const overlap = existing.find(s => !(end <= s.start_time || start >= s.end_time));
       if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
       errEl.style.display = 'none';
+
+      const visitorType = document.getElementById('visitorTypeSelect').value;
+      let visitorName = null;
+      let visitorEmail = null;
+
+      if (visitorType === 'registered') {
+        const select = document.getElementById('registeredVisitorSelect');
+        visitorEmail = select.value;
+        if (!visitorEmail) { errEl.style.display='block'; errEl.textContent='Please select a registered visitor.'; return; }
+        visitorName = select.options[select.selectedIndex].text.split(' (')[0];
+      } else if (visitorType === 'unregistered') {
+        visitorName = document.getElementById('unregVisitorName').value.trim();
+        visitorEmail = document.getElementById('unregVisitorEmail').value.trim();
+        if (!visitorName || !visitorEmail) { errEl.style.display='block'; errEl.textContent='Please enter visitor name and email.'; return; }
+        if (!/\S+@\S+\.\S+/.test(visitorEmail)) { errEl.style.display='block'; errEl.textContent='Please enter a valid visitor email.'; return; }
+      }
+
       await supabaseFetch('schedules', 'POST', {
         title, date, start_time: start, end_time: end,
         description: desc,
-        category, status: 'upcoming', created_by: 'owner'
+        category, status: 'upcoming', created_by: 'owner',
+        visitor_type: visitorType === 'none' ? 'unregistered' : visitorType,
+        visitor_name: visitorName,
+        visitor_email: visitorEmail
       });
+
+      if (visitorEmail) {
+        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+          visitor_name: visitorName,
+          visitor_email: visitorEmail,
+          requested_date: date, start_time: start, end_time: end,
+          description: 'A meeting "' + title + '" has been scheduled with you by Ayyappa. ' + (desc ? ('Details: ' + desc) : '')
+        });
+      }
+
       closeAddSlot();
       reloadSlots();
     }
