@@ -915,9 +915,10 @@ function toggleMomVoiceInput(e) {
       const offset = 5.5 * 60 * 60 * 1000;
       const istNow = new Date(today.getTime() + offset);
       const todayStr = istNow.toISOString().split('T')[0];
+      const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
       const slots = await supabaseFetch('schedules?status=neq.cancelled&order=date,start_time');
       const pending = await supabaseFetch('booking_requests?status=eq.pending');
-      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST. Working hours: 5AM to 11PM IST.
+      const systemPrompt = `You are MyScheduler AI assistant for the owner. Today is ${todayStr} IST and the current time is ${currentTimeStr} IST. Working hours: 5AM to 11PM IST.
       Never book or reschedule any slot to a date before today (${todayStr}). Only mention this if the owner specifically tries to use a past date — do not mention it in unrelated replies.
 All upcoming/active schedule slots (with their id, title, date, start_time, end_time, status): ${JSON.stringify(slots)}
 Pending booking requests: ${JSON.stringify(pending)}
@@ -1380,6 +1381,22 @@ async function generateReport() {
   const date = document.getElementById('reportDate').value;
   const container = document.getElementById('reportContainer');
   if (!date) { container.innerHTML = '<p style="color:#EF4444">Please select a date.</p>'; return; }
+
+  const nowIST = new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000);
+  const todayIST = nowIST.toISOString().split('T')[0];
+  const currentTimeIST = nowIST.toISOString().split('T')[1].slice(0, 5);
+  const isToday = date === todayIST;
+  const isFuture = date > todayIST;
+
+  if (isFuture) {
+    container.innerHTML = '<p style="color:#F59E0B">This date is in the future. Please select today or a past date.</p>';
+    return;
+  }
+  if (isToday && currentTimeIST < '19:00') {
+    container.innerHTML = '<p style="color:#F59E0B">I can only generate today\'s daily report after 7:00 PM IST. Please check back after 7 PM.</p>';
+    return;
+  }
+
   container.innerHTML = '<p style="color:#94A3B8">Checking reports...</p>';
   const slots = await supabaseFetch('schedules?date=eq.' + date + '&order=start_time');
   const bookingRequests = await supabaseFetch('booking_requests?requested_date=eq.' + date);
@@ -1387,11 +1404,9 @@ async function generateReport() {
   const cancelled = slots.filter(s => s.status === 'cancelled');
   const rescheduled = slots.filter(s => s.status === 'rescheduled');
   const upcoming = slots.filter(s => s.status === 'upcoming');
-  // Check if daily report already generated and stored
-  const storedReports = await supabaseFetch('chat_history?role=eq.daily_report&date=eq.' + date);
-  if (storedReports.length > 0) {
-    const reportText = storedReports[0].message;
-    container.innerHTML = `
+
+  function renderReportHtml(reportText) {
+    return `
       <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:12px">
         <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
           <div style="text-align:center;flex:1">
@@ -1414,8 +1429,24 @@ async function generateReport() {
         <div style="border-top:1px solid #334155;padding-top:12px;font-size:13px;color:#CBD5E1;white-space:pre-wrap;line-height:1.6">${reportText}</div>
       </div>
     `;
-    return;
   }
+
+  const storedReports = await supabaseFetch('chat_history?role=eq.daily_report&date=eq.' + date + '&order=created_at.desc&limit=1');
+  if (storedReports.length > 0) {
+    let parsed = null;
+    try { parsed = JSON.parse(storedReports[0].message); } catch (e) { parsed = null; }
+    if (parsed && parsed.completedCount === completed.length && parsed.cancelledCount === cancelled.length && parsed.rescheduledCount === rescheduled.length) {
+      container.innerHTML = renderReportHtml(parsed.report);
+      return;
+    }
+    if (!parsed) {
+      // Legacy plain-text report from before this update — show as-is, don't force regenerate.
+      container.innerHTML = renderReportHtml(storedReports[0].message);
+      return;
+    }
+    // counts changed (e.g. a meeting completed after 7PM) — fall through and regenerate below.
+  }
+
   container.innerHTML = '<p style="color:#94A3B8">Generating new report...</p>';
   const systemPrompt = `You are a scheduling analytics assistant. Analyze the following data for ${date} and provide a concise daily report.
 Schedule data: ${JSON.stringify(slots)}
@@ -1429,7 +1460,7 @@ Keep it concise and professional. Plain text only, no markdown stars.`;
   try {
     const geminiApiKey = localStorage.getItem('gemini_api_key') || '';
     const geminiModel = localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite';
-    
+
     const res = await fetch('/api/gemini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1442,35 +1473,17 @@ Keep it concise and professional. Plain text only, no markdown stars.`;
     });
     const data = await res.json();
     const report = data.reply || 'Could not generate report.';
-    // Store generated report in chat_history
     await supabaseFetch('chat_history', 'POST', {
       date: date,
       role: 'daily_report',
-      message: report
+      message: JSON.stringify({
+        report,
+        completedCount: completed.length,
+        cancelledCount: cancelled.length,
+        rescheduledCount: rescheduled.length
+      })
     });
-    container.innerHTML = `
-      <div style="background:#0F172A;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:12px">
-        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
-          <div style="text-align:center;flex:1">
-            <div style="font-size:24px;font-weight:bold;color:#22C55E">${completed.length}</div>
-            <div style="font-size:11px;color:#94A3B8">Completed</div>
-          </div>
-          <div style="text-align:center;flex:1">
-            <div style="font-size:24px;font-weight:bold;color:#EF4444">${cancelled.length}</div>
-            <div style="font-size:11px;color:#94A3B8">Cancelled</div>
-          </div>
-          <div style="text-align:center;flex:1">
-            <div style="font-size:24px;font-weight:bold;color:#F97316">${rescheduled.length}</div>
-            <div style="font-size:11px;color:#94A3B8">Rescheduled</div>
-          </div>
-          <div style="text-align:center;flex:1">
-            <div style="font-size:24px;font-weight:bold;color:#6366F1">${upcoming.length}</div>
-            <div style="font-size:11px;color:#94A3B8">Upcoming</div>
-          </div>
-        </div>
-        <div style="border-top:1px solid #334155;padding-top:12px;font-size:13px;color:#CBD5E1;white-space:pre-wrap;line-height:1.6">${report}</div>
-      </div>
-    `;
+    container.innerHTML = renderReportHtml(report);
   } catch(e) {
     container.innerHTML = '<p style="color:#EF4444">Error generating report. Please try again.</p>';
   }
