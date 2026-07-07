@@ -42,6 +42,8 @@
     .status-accepted_with_remarks { background: #22C55E22; color: #22C55E; }
     .status-withdrawn { background: #47556922; color: #94A3B8; }
     .status-withdraw_requested { background: #F9731622; color: #F97316; }
+    .status-withdrawal_accepted { background: #47556922; color: #94A3B8; }
+    .status-withdrawal_declined { background: #3B82F622; color: #3B82F6; }
     .chat-messages { height: calc(100vh - 220px); overflow-y: auto; margin-bottom: 12px; }
     .message { margin-bottom: 12px; display: flex; flex-direction: column; }
     .message.user { align-items: flex-end; }
@@ -548,7 +550,7 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
       const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
       container.innerHTML = data.map(b => {
         const isFuture = b.requested_date > todayStr || (b.requested_date === todayStr && b.start_time.slice(0, 5) > currentTimeStr);
-        const canWithdraw = isFuture && b.status !== 'withdrawn' && b.status !== 'declined';
+       const canWithdraw = isFuture && b.status !== 'withdrawn' && b.status !== 'declined' && b.status !== 'withdrawal_accepted' && b.status !== 'withdrawal_declined';
         
         let withdrawBtnHtml = '';
         if (isFuture) {
@@ -558,7 +560,7 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
                 Withdraw
               </button>
             `;
-          } else if (b.status === 'accepted' || b.status === 'accepted_with_remarks') {
+          } else if (b.status === 'accepted' || b.status === 'accepted_with_remarks' || b.status === 'withdrawal_declined') {
             withdrawBtnHtml = `
               <button class="btn btn-cancel" style="background:#F97316; color:white; font-size:11px; padding:4px 8px; border-radius:4px; margin-top:6px; cursor:pointer;" onclick="requestWithdraw('${b.id}', '${b.requested_date}', '${b.start_time}', '${b.end_time}', '${b.visitor_email}', '${b.visitor_name.replace(/'/g,"\\'")}')">
                 Request Withdraw
@@ -582,54 +584,56 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
       }).join('');
     }
     async function directWithdraw(id) {
-      if (!confirm('Are you sure you want to withdraw this meeting request?')) return;
-      try {
-        const reqData = await supabaseFetch('booking_requests?id=eq.' + id);
-        if (!reqData.length) { alert('Request not found.'); return; }
-        const r = reqData[0];
-        await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
-        const schedules = await supabaseFetch('schedules?date=eq.' + r.requested_date + '&start_time=eq.' + r.start_time + '&end_time=eq.' + r.end_time + '&visitor_email=eq.' + encodeURIComponent(r.visitor_email) + '&status=neq.cancelled');
-        if (schedules.length > 0) {
-          await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'Withdrawn by visitor' });
-        }
-        emailjs.send('service_88v685e', 'template_e4ekmie', {
-          visitor_name: r.visitor_name, visitor_email: r.visitor_email, requested_date: r.requested_date,
-          start_time: r.start_time.slice(0,5), end_time: r.end_time.slice(0,5),
-          description: 'The visitor has withdrawn their meeting request.'
-        });
-        alert('Your request has been successfully withdrawn.');
-        loadPastBookings();
-        if (selectedDate) {
-          selectDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-        }
-      } catch (e) {
-        console.error('Withdraw failed:', e);
-        alert('Failed to withdraw request.');
-      }
+  const reason = prompt('Please provide a reason for withdrawing this request:');
+  if (reason === null) return;
+  if (!reason.trim()) { alert('A reason is required to withdraw.'); return; }
+  if (!confirm('Are you sure you want to withdraw this meeting request?')) return;
+  try {
+    const reqData = await supabaseFetch('booking_requests?id=eq.' + id);
+    if (!reqData.length) { alert('Request not found.'); return; }
+    const r = reqData[0];
+    await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn', withdrawal_reason: reason.trim() });
+    const schedules = await supabaseFetch('schedules?date=eq.' + r.requested_date + '&start_time=eq.' + r.start_time + '&end_time=eq.' + r.end_time + '&visitor_email=eq.' + encodeURIComponent(r.visitor_email) + '&status=neq.cancelled');
+    if (schedules.length > 0) {
+      await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'Withdrawn by visitor. Reason: ' + reason.trim() });
     }
-    async function withdrawRequest(id, date, start, end, email, name) {
-      if (!confirm('Are you sure you want to withdraw this meeting request?')) return;
-      try {
-        await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdrawn' });
-        const schedules = await supabaseFetch('schedules?date=eq.' + date + '&start_time=eq.' + start + '&end_time=eq.' + end + '&visitor_email=eq.' + encodeURIComponent(email) + '&status=neq.cancelled');
-        if (schedules.length > 0) {
-          await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'Withdrawn by visitor' });
-        }
-        emailjs.send('service_88v685e', 'template_e4ekmie', {
-          visitor_name: name, visitor_email: email, requested_date: date,
-          start_time: start.slice(0,5), end_time: end.slice(0,5),
-          description: 'The visitor has withdrawn their meeting request.'
-        });
-        alert('Your request has been successfully withdrawn.');
-        loadPastBookings();
-        if (selectedDate) {
-          selectDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-        }
-      } catch (e) {
-        console.error('Withdraw failed:', e);
-        alert('Failed to withdraw request.');
-      }
+    emailjs.send('service_88v685e', 'template_e4ekmie', {
+      visitor_name: r.visitor_name, visitor_email: r.visitor_email, requested_date: r.requested_date,
+      start_time: r.start_time.slice(0,5), end_time: r.end_time.slice(0,5),
+      description: 'The visitor has withdrawn their meeting request. Reason: ' + reason.trim()
+    });
+    alert('Your request has been successfully withdrawn.');
+    loadPastBookings();
+    if (selectedDate) {
+      selectDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
     }
+  } catch (e) {
+    console.error('Withdraw failed:', e);
+    alert('Failed to withdraw request.');
+  }
+}
+async function withdrawRequest(id, date, start, end, email, name) {
+  await requestWithdraw(id, date, start, end, email, name);
+}
+async function requestWithdraw(id, date, start, end, email, name) {
+  const reason = prompt('Please provide a reason for requesting withdrawal:');
+  if (reason === null) return;
+  if (!reason.trim()) { alert('A reason is required to request withdrawal.'); return; }
+  if (!confirm('Are you sure you want to request withdrawal for this accepted meeting? This will send a request to Ayyappa.')) return;
+  try {
+    await supabaseFetch('booking_requests?id=eq.' + id, 'PATCH', { status: 'withdraw_requested', withdrawal_reason: reason.trim() });
+    emailjs.send('service_88v685e', 'template_e4ekmie', {
+      visitor_name: name, visitor_email: email, requested_date: date,
+      start_time: start.slice(0,5), end_time: end.slice(0,5),
+      description: 'The visitor has requested to withdraw their accepted meeting. Reason: ' + reason.trim()
+    });
+    alert('Your withdraw request has been submitted to Ayyappa.');
+    loadPastBookings();
+  } catch (e) {
+    console.error('Withdraw request failed:', e);
+    alert('Failed to request withdrawal.');
+  }
+}
     async function requestWithdraw(id, date, start, end, email, name) {
       if (!confirm('Are you sure you want to request withdrawal for this accepted meeting? This will send a request to Ayyappa.')) return;
       try {

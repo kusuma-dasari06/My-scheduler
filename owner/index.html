@@ -1200,6 +1200,7 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           <div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${r.visitor_email}</div>
           <div style="font-size:13px;margin-bottom:4px">${r.requested_date} | ${r.start_time.slice(0,5)} — ${r.end_time.slice(0,5)}</div>
           <div style="font-size:13px;margin-bottom:12px;color:#CBD5E1">${r.description}</div>
+          ${r.status === 'withdraw_requested' && r.withdrawal_reason ? `<div style="font-size:12px;color:#F97316;margin-bottom:12px">Withdraw Reason: ${r.withdrawal_reason}</div>` : ''}
           <div id="actions-container-${r.id}">
             ${actionButtonsHtml}
           </div>
@@ -1344,24 +1345,26 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           description: 'Request declined' + (remarks ? '. Reason: ' + remarks : '.')
         });
       } else if (currentRemarkAction === 'accept_withdraw') {
-        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'withdrawn', owner_remarks: remarks });
-        const schedules = await supabaseFetch('schedules?date=eq.' + currentRemarkDate + '&start_time=eq.' + currentRemarkStart + '&end_time=eq.' + currentRemarkEnd + '&visitor_email=eq.' + encodeURIComponent(currentRemarkEmail) + '&status=neq.cancelled');
-        if (schedules.length > 0) {
-          await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'Withdrawn by visitor' });
-        }
-        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
-          visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
-          requested_date: currentRemarkDate, start_time: currentRemarkStart.slice(0,5), end_time: currentRemarkEnd.slice(0,5),
-          description: remarks ? ('Your withdraw request was accepted. Remarks: ' + remarks) : 'Your withdraw request has been accepted. The meeting is cancelled.'
-        });
-      } else if (currentRemarkAction === 'decline_withdraw') {
-        await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'accepted', owner_remarks: remarks });
-        emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
-          visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
-          requested_date: currentRemarkDate, start_time: currentRemarkStart.slice(0,5), end_time: currentRemarkEnd.slice(0,5),
-          description: remarks ? ('Your withdraw request was declined. Remarks: ' + remarks) : 'Your withdraw request was declined. The meeting remains scheduled.'
-        });
-      }
+  const reqRow = await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId);
+  const visitorReason = (reqRow[0] && reqRow[0].withdrawal_reason) ? reqRow[0].withdrawal_reason : 'No reason provided';
+  await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'withdrawal_accepted', owner_remarks: remarks });
+  const schedules = await supabaseFetch('schedules?date=eq.' + currentRemarkDate + '&start_time=eq.' + currentRemarkStart + '&end_time=eq.' + currentRemarkEnd + '&visitor_email=eq.' + encodeURIComponent(currentRemarkEmail) + '&status=neq.cancelled');
+  if (schedules.length > 0) {
+    await supabaseFetch('schedules?id=eq.' + schedules[0].id, 'PATCH', { status: 'cancelled', cancel_reason: 'Withdrawn by visitor. Reason: ' + visitorReason });
+  }
+  emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+    visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
+    requested_date: currentRemarkDate, start_time: currentRemarkStart.slice(0,5), end_time: currentRemarkEnd.slice(0,5),
+    description: remarks ? ('Your withdraw request was accepted. Remarks: ' + remarks) : 'Your withdraw request has been accepted. The meeting is cancelled.'
+  });
+} else if (currentRemarkAction === 'decline_withdraw') {
+  await supabaseFetch('booking_requests?id=eq.' + currentRemarkRequestId, 'PATCH', { status: 'withdrawal_declined', owner_remarks: remarks });
+  emailjs.send(EMAILJS_SERVICE, TEMPLATE_VISITOR, {
+    visitor_name: currentRemarkName, visitor_email: currentRemarkEmail,
+    requested_date: currentRemarkDate, start_time: currentRemarkStart.slice(0,5), end_time: currentRemarkEnd.slice(0,5),
+    description: remarks ? ('Your withdraw request was declined. Remarks: ' + remarks) : 'Your withdraw request was declined. The meeting remains scheduled.'
+  });
+}
       closeRemarksModal();
       loadRequests();
       loadPendingCount();
