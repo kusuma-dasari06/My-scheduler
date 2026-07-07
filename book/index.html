@@ -554,7 +554,7 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
         
         let withdrawBtnHtml = '';
         if (isFuture) {
-          if (b.status === 'pending') {
+          if (b.status === 'pending' || b.status === 'reschedule_requested') {
             withdrawBtnHtml = `
               <button class="btn btn-cancel" style="background:#EF4444; color:white; font-size:11px; padding:4px 8px; border-radius:4px; margin-top:6px; cursor:pointer;" onclick="directWithdraw('${b.id}')">
                 Withdraw
@@ -573,11 +573,6 @@ if (overlap) { errEl.style.display='block'; errEl.textContent='This time is no l
           <div class="booking-status status-${b.status}">${b.status.replace(/_/g,' ')}</div>
           <div style="font-size:13px;margin-bottom:4px">${b.requested_date} | ${b.start_time.slice(0,5)} — ${b.end_time.slice(0,5)}</div>
           ${b.owner_remarks ? `<div style="font-size:12px;color:#94A3B8;margin-bottom:8px">Remarks: ${b.owner_remarks}</div>` : ''}
-          ${canWithdraw ? `
-            <button class="btn btn-cancel" style="background:#EF4444; color:white; font-size:11px; padding:4px 8px; border-radius:4px; margin-top:6px; cursor:pointer;" onclick="withdrawRequest('${b.id}', '${b.requested_date}', '${b.start_time}', '${b.end_time}', '${b.visitor_email}', '${b.visitor_name.replace(/'/g,"\\'")}')">
-              Withdraw Request
-            </button>
-          ` : ''}
           ${withdrawBtnHtml}
         </div>
       `;
