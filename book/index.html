@@ -154,12 +154,11 @@ transition:.2s;color:white;border:none;border-radius:8px;cursor:pointer;">
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
       <div class="past-bookings-section" id="meetingHistorySection" style="display:none;">
-        <h3>📅 My Meeting History</h3>
-        <div class="past-input">
-  <button onclick="loadMeetingHistory()" style="width:100%;padding:8px;background:#334155;color:#F1F5F9;border:none;border-radius:8px;cursor:pointer;">Search My History</button>
-</div>
-        
-        <div id="meetingHistoryContainer"><p style="color:#94A3B8;font-size:13px">Loading...</p></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="margin-bottom:0;">📅 My Meeting History</h3>
+          <button onclick="toggleMeetingHistory()" style="padding:4px 10px;background:#334155;color:#F1F5F9;border:none;border-radius:6px;cursor:pointer;font-size:12px;">View</button>
+        </div>
+        <div id="meetingHistoryContainer" style="display:none;"><p style="color:#94A3B8;font-size:13px">Loading...</p></div>
       </div>
       <div class="past-bookings-section">
         <h3>View My Past Requests</h3>
@@ -339,12 +338,27 @@ function showMainApp() {
   loadMeetingHistory();
 }
 
+let meetingHistoryLoaded = false;
+
+function toggleMeetingHistory() {
+  const container = document.getElementById('meetingHistoryContainer');
+  const isHidden = container.style.display === 'none';
+  container.style.display = isHidden ? 'block' : 'none';
+  if (isHidden && !meetingHistoryLoaded) {
+    fetchMeetingHistory();
+  }
+}
+
 async function loadMeetingHistory() {
   if (!loggedInVisitor) return;
   const section = document.getElementById('meetingHistorySection');
-  const container = document.getElementById('meetingHistoryContainer');
   section.style.display = 'block';
+}
+
+async function fetchMeetingHistory() {
+  const container = document.getElementById('meetingHistoryContainer');
   container.innerHTML = '<p style="color:#94A3B8;font-size:13px">Loading...</p>';
+  meetingHistoryLoaded = true;
   try {
     const data = await supabaseFetch('schedules?visitor_email=eq.' + encodeURIComponent(loggedInVisitor.email) + '&order=date.desc,start_time.desc');
     if (!data.length) { container.innerHTML = '<p style="color:#94A3B8;font-size:13px">No meeting history found.</p>'; return; }
