@@ -1109,6 +1109,10 @@ When the owner wants to cancel a slot, identify the correct slot id from the sch
 [ACTION:CANCEL:slot_id:reason]
 When the owner wants to edit a slot's title, identify the slot id, confirm the new title with the owner, then once confirmed reply with EXACTLY:
 [ACTION:EDIT:slot_id:new_title]
+
+When the owner wants to edit a slot's agenda/description, first check the "created_by" field of that slot in the schedule data above. If created_by is "owner", confirm the new agenda text with the owner, then once confirmed reply with EXACTLY:
+[ACTION:EDIT_AGENDA:slot_id:new_description]
+If created_by is "visitor", tell the owner that only the title can be edited for visitor-booked meetings, not the agenda, and do not perform any action.
 When the owner wants to reschedule a slot, identify the slot id, ask the owner for a reason for rescheduling, confirm the new date, time, and reason with the owner, then once confirmed reply with EXACTLY this with times in strict 24-hour HH:MM format:
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM:reason]
 When the owner wants to mark a slot as completed/done, identify the slot id, ask for minutes of the meeting (MoM) of minimum 30 words, and once provided and confirmed by the owner, reply with EXACTLY:
@@ -1242,6 +1246,13 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
           const match = reply.match(/\[ACTION:EDIT:([^:]+):([^\]]+)\]/);
           if (match) {
             await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { title: match[2] });
+            reloadSlots();
+          }
+        }
+        if (reply.includes('[ACTION:EDIT_AGENDA:')) {
+          const match = reply.match(/\[ACTION:EDIT_AGENDA:([^:]+):([^\]]+)\]/);
+          if (match) {
+            await supabaseFetch('schedules?id=eq.' + match[1], 'PATCH', { description: match[2] });
             reloadSlots();
           }
         }
