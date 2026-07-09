@@ -830,6 +830,8 @@ function toggleMomVoiceInput(e) {
       alert('Link copied!');
     }
     async function openAddSlot() {
+      populateTimeDropdown('slotStartHour', 'slotStartMin');
+      populateTimeDropdown('slotEndHour', 'slotEndMin');
       document.getElementById('visitorTypeSelect').value = 'none';
       document.getElementById('registeredVisitorGroup').style.display = 'none';
       document.getElementById('unregisteredVisitorGroup').style.display = 'none';
@@ -864,8 +866,8 @@ function toggleMomVoiceInput(e) {
     async function submitSlot() {
       const title = document.getElementById('slotTitle').value.trim();
       const date = document.getElementById('slotDate').value;
-      const start = document.getElementById('slotStart').value;
-      const end = document.getElementById('slotEnd').value;
+      const start = get24HourTime('slotStartHour', 'slotStartMin', 'slotStartAmpm');
+      const end = get24HourTime('slotEndHour', 'slotEndMin', 'slotEndAmpm');
       const desc = document.getElementById('slotDesc').value.trim();
       const category = document.getElementById('slotCategory').value;
       const errEl = document.getElementById('slotError');
@@ -1002,6 +1004,39 @@ function toggleMomVoiceInput(e) {
         micBtn.style.background = '#334155';
         micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
       }
+    }
+    function populateTimeDropdown(hourId, minId) {
+      const hourSel = document.getElementById(hourId);
+      const minSel = document.getElementById(minId);
+      hourSel.innerHTML = '';
+      for (let h = 1; h <= 12; h++) {
+        hourSel.innerHTML += `<option value="${h}">${h}</option>`;
+      }
+      minSel.innerHTML = '';
+      for (let m = 0; m < 60; m += 5) {
+        const mm = String(m).padStart(2, '0');
+        minSel.innerHTML += `<option value="${mm}">${mm}</option>`;
+      }
+    }
+
+    function get24HourTime(hourId, minId, ampmId) {
+      let h = parseInt(document.getElementById(hourId).value, 10);
+      const m = document.getElementById(minId).value;
+      const ampm = document.getElementById(ampmId).value;
+      if (ampm === 'PM' && h !== 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      return String(h).padStart(2, '0') + ':' + m;
+    }
+
+    function set12HourTime(hourId, minId, ampmId, time24) {
+      if (!time24) return;
+      let [h, m] = time24.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      let h12 = h % 12;
+      if (h12 === 0) h12 = 12;
+      document.getElementById(hourId).value = h12;
+      document.getElementById(minId).value = String(m).padStart(2, '0');
+      document.getElementById(ampmId).value = ampm;
     }
     function normalizeTime(t) {
       if (!t) return t;
