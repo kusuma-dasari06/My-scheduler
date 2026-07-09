@@ -553,7 +553,7 @@ document.addEventListener('click', function(e) {
             ${(s.status === 'upcoming' || s.status === 'rescheduled') ? `
               ${s.status === 'rescheduled' ? `<div style="color:#F97316;font-size:12px;margin-bottom:6px">rescheduled</div>` : ''}
               <button class="btn-complete" onclick="updateStatus('${s.id}', 'completed')">Complete</button>
-              <button class="btn-edit" onclick="editSlot('${s.id}')">Edit</button>
+              <button class="btn-edit" onclick="editSlot('${s.id}','${s.created_by}')">Edit</button>
               <button class="btn-reschedule" onclick="rescheduleSlot('${s.id}')">Reschedule</button>
               <button class="btn-cancel" onclick="cancelSlot('${s.id}','${escapeHtml(s.visitor_email||'')}','${escapeHtml(s.visitor_name||'')}')">Cancel</button>
               ${s.status === 'rescheduled' ? `<button class="btn-reason" onclick="toggleRescheduleReason('${s.id}')">📝 Reschedule Reason</button>` : ''}
@@ -707,11 +707,26 @@ function toggleMomVoiceInput(e) {
         loadSlots(`${y}-${m}-${d}`);
       }
     }
-    async function editSlot(id) {
-      const newTitle = prompt('Enter new title:');
-      if (!newTitle) return;
-      await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
-      reloadSlots();
+    async function editSlot(id, createdBy) {
+      if (createdBy === 'owner') {
+        const choice = prompt('What do you want to edit?\n\nType 1 for Title\nType 2 for Agenda/Description');
+        if (choice === '1') {
+          const newTitle = prompt('Enter new title:');
+          if (!newTitle) return;
+          await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
+          reloadSlots();
+        } else if (choice === '2') {
+          const newDesc = prompt('Enter new agenda/description:');
+          if (!newDesc) return;
+          await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { description: newDesc });
+          reloadSlots();
+        }
+      } else {
+        const newTitle = prompt('Enter new title:');
+        if (!newTitle) return;
+        await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
+        reloadSlots();
+      }
     }
     function rescheduleSlot(id) {
       currentRescheduleSlotId = id;
