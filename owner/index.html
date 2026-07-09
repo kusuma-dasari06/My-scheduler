@@ -172,11 +172,25 @@
       </div>
       <div class="form-group">
         <label>New Start Time</label>
-        <input type="time" id="rescheduleStart" />
+        <div style="display:flex; gap:8px;">
+          <select id="rescheduleStartHour" style="flex:1;"></select>
+          <select id="rescheduleStartMin" style="flex:1;"></select>
+          <select id="rescheduleStartAmpm" style="flex:1;">
+            <option>AM</option>
+            <option>PM</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label>New End Time</label>
-        <input type="time" id="rescheduleEnd" />
+        <div style="display:flex; gap:8px;">
+          <select id="rescheduleEndHour" style="flex:1;"></select>
+          <select id="rescheduleEndMin" style="flex:1;"></select>
+          <select id="rescheduleEndAmpm" style="flex:1;">
+            <option>AM</option>
+            <option>PM</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label>Reason for Reschedule</label>
@@ -744,9 +758,9 @@ function toggleMomVoiceInput(e) {
     }
     function rescheduleSlot(id) {
       currentRescheduleSlotId = id;
+      populateTimeDropdown('rescheduleStartHour', 'rescheduleStartMin');
+      populateTimeDropdown('rescheduleEndHour', 'rescheduleEndMin');
       document.getElementById('rescheduleDate').value = '';
-      document.getElementById('rescheduleStart').value = '';
-      document.getElementById('rescheduleEnd').value = '';
       document.getElementById('rescheduleReason').value = '';
       document.getElementById('rescheduleError').style.display = 'none';
       document.getElementById('rescheduleModal').classList.add('active');
@@ -754,8 +768,8 @@ function toggleMomVoiceInput(e) {
     function closeRescheduleModal() { document.getElementById('rescheduleModal').classList.remove('active'); }
     async function submitReschedule() {
       const newDate = document.getElementById('rescheduleDate').value;
-      const newStart = document.getElementById('rescheduleStart').value;
-      const newEnd = document.getElementById('rescheduleEnd').value;
+      const newStart = get24HourTime('rescheduleStartHour', 'rescheduleStartMin', 'rescheduleStartAmpm');
+      const newEnd = get24HourTime('rescheduleEndHour', 'rescheduleEndMin', 'rescheduleEndAmpm');
       const reason = document.getElementById('rescheduleReason').value.trim();
       const errEl = document.getElementById('rescheduleError');
       if (!newDate || !newStart || !newEnd || !reason) { errEl.style.display='block'; errEl.textContent='Please fill all fields.'; return; }
