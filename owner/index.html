@@ -318,11 +318,25 @@
       </div>
       <div class="form-group">
         <label>Start Time (IST, min 5:00 AM)</label>
-        <input type="time" id="slotStart" min="05:00" max="23:00" />
+        <div style="display:flex; gap:8px;">
+          <select id="slotStartHour" style="flex:1;"></select>
+          <select id="slotStartMin" style="flex:1;"></select>
+          <select id="slotStartAmpm" style="flex:1;">
+            <option>AM</option>
+            <option>PM</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label>End Time (IST, max 11:00 PM)</label>
-        <input type="time" id="slotEnd" min="05:00" max="23:00" />
+        <div style="display:flex; gap:8px;">
+          <select id="slotEndHour" style="flex:1;"></select>
+          <select id="slotEndMin" style="flex:1;"></select>
+          <select id="slotEndAmpm" style="flex:1;">
+            <option>AM</option>
+            <option>PM</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label>Description</label>
