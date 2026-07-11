@@ -508,19 +508,23 @@ document.addEventListener('click', function(e) {
   if (box && !e.target.closest('.form-group')) box.style.display = 'none';
 });
     async function supabaseFetch(path, method = 'GET', body = null) {
-      const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
-        method,
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': method === 'POST' ? 'return=representation' : ''
-        },
-        body: body ? JSON.stringify(body) : null
-      });
-      const text = await res.text();
-      return text ? JSON.parse(text) : {};
-    }
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : ''
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    console.error('Supabase error:', res.status, text);
+    throw new Error(text || 'Supabase request failed');
+  }
+  return text ? JSON.parse(text) : {};
+}
     async function loadSlots(dateStr) {
       const data = await supabaseFetch('schedules?date=eq.' + dateStr + '&order=start_time');
       renderSlots(data);
@@ -694,9 +698,15 @@ function toggleMomVoiceInput(e) {
       const words = text.split(/\s+/).filter(w => w.length > 0).length;
       const errEl = document.getElementById('momError');
       if (words < 30) { errEl.style.display = 'block'; errEl.textContent = 'Please enter at least 30 words.'; return; }
-      await supabaseFetch('schedules?id=eq.' + currentMomSlotId, 'PATCH', { status: 'completed', minutes_of_meeting: text });
-      closeMomModal();
-      reloadSlots();
+      try {
+        await supabaseFetch('schedules?id=eq.' + currentMomSlotId, 'PATCH', { status: 'completed', minutes_of_meeting: text });
+        closeMomModal();
+        reloadSlots();
+      } catch (e) {
+        errEl.style.display = 'block';
+        errEl.textContent = 'Failed to save minutes. Please try again.';
+        console.error(e);
+      }
     }
     function cancelSlot(id, visitorEmail, visitorName) {
       currentCancelSlotId = id;
@@ -779,7 +789,6 @@ function toggleMomVoiceInput(e) {
       const istNow = new Date(today.getTime() + offset);
       const todayDateStr4 = istNow.toISOString().split('T')[0];
       const currentTimeStr = istNow.toISOString().split('T')[1].slice(0, 5);
-      if (newDate < todayDateStr4) { errEl.style.display='block'; errEl.textContent='This date has expired. Please choose today or a future date.'; return; }
       const existing = await supabaseFetch('schedules?date=eq.' + newDate + '&status=neq.cancelled');
       const overlap = existing.find(s => s.id !== currentRescheduleSlotId && !(newEnd <= s.start_time || newStart >= s.end_time));
       if (overlap) { errEl.style.display='block'; errEl.textContent='This time overlaps with an existing slot!'; return; }
@@ -1112,6 +1121,8 @@ When the owner wants to reschedule a slot, identify the slot id, ask the owner f
 [ACTION:RESCHEDULE:slot_id:new_date:HH:MM:HH:MM:reason]
 When the owner wants to mark a slot as completed/done, identify the slot id, ask for minutes of the meeting (MoM) of minimum 30 words, and once provided and confirmed by the owner, reply with EXACTLY:
 [ACTION:COMPLETE:slot_id:mom_text]
+When the owner wants to log a meeting that ALREADY happened in the past (a past date/time) and mark it complete in one go — e.g. owner says something like "yesterday 3 to 4 client tho meeting jarigindi, complete chesey" — collect title, date, start time, end time, and minutes of meeting (MoM, minimum 30 words) all together in conversation. Confirm all details with the owner before acting. Once confirmed, reply with EXACTLY this on its own line, with times in strict 24-hour HH:MM format:
+[ACTION:BOOK_COMPLETE:title:date:HH:MM:HH:MM:mom_text]
 When the owner wants to accept a pending booking request, identify the request id from the pending booking requests list above, confirm with the owner, then once confirmed reply with EXACTLY:
 [ACTION:ACCEPT_REQUEST:request_id]
 When the owner wants to reschedule (ask the visitor to pick a new time for) a pending booking request, identify the request id, ask the owner for the reschedule reason/remarks, confirm with the owner, then once confirmed reply with EXACTLY:
@@ -1215,6 +1226,28 @@ CRITICAL: All times inside ACTION tags MUST be in 24-hour HH:MM format only. Nev
             });
 
             reloadSlots();
+          }
+        }
+        if (reply.includes('[ACTION:BOOK_COMPLETE:')) {
+          const match = reply.match(/\[ACTION:BOOK_COMPLETE:([^:]+):([^:]+):(\d{1,2}:\d{2}\s*[APMapm]*):(\d{1,2}:\d{2}\s*[APMapm]*):([^\]]*)\]/);
+          if (match) {
+            const bTitle = match[1];
+            const bDate = match[2];
+            const newStart = normalizeTime(match[3]);
+            const newEnd = normalizeTime(match[4]);
+            const momText = match[5] || '';
+            try {
+              await supabaseFetch('schedules', 'POST', {
+                title: bTitle, date: bDate, start_time: newStart, end_time: newEnd,
+                description: 'Logged via AI assistant',
+                category: 'Meeting', status: 'completed', created_by: 'owner',
+                minutes_of_meeting: momText
+              });
+              reloadSlots(); loadStatusCounts();
+            } catch (e) {
+              container.innerHTML += `<div class="message ai"><div class="message-bubble">Sorry, I couldn't save that meeting. Please try again.</div></div>`;
+              container.scrollTop = container.scrollHeight;
+            }
           }
         }
         if (reply.includes('[ACTION:EDIT:')) {
