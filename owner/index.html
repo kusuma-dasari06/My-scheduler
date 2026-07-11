@@ -401,6 +401,25 @@
       </div>
     </div>
   </div>
+  <!-- Edit Slot Modal -->
+  <div class="modal-overlay" id="editSlotModal">
+    <div class="modal" style="width:450px">
+      <h3>Edit Meeting</h3>
+      <div class="error-msg" id="editSlotError"></div>
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="editSlotTitle" placeholder="Enter title" />
+      </div>
+      <div class="form-group" id="editAgendaGroup">
+        <label>Agenda / Description</label>
+        <textarea id="editSlotAgenda" placeholder="Enter agenda..."></textarea>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeEditSlotModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitEditSlot()">Save Changes</button>
+      </div>
+    </div>
+  </div>
   <script>
     const SUPABASE_URL = 'https://xkxlzffwmzxbuiyglnvz.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGx6ZmZ3bXp4YnVpeWdsbnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTE4ODAsImV4cCI6MjA5NjcyNzg4MH0.o055hpZ23PVUGezvB3sXwWQhj4BsAXi7QoJhrdcG20o';
@@ -749,25 +768,54 @@ function toggleMomVoiceInput(e) {
         loadSlots(`${y}-${m}-${d}`);
       }
     }
+    let currentEditSlotId = null;
+    let currentEditCreatedBy = null;
+
     async function editSlot(id, createdBy) {
+      currentEditSlotId = id;
+      currentEditCreatedBy = createdBy;
+      document.getElementById('editSlotError').style.display = 'none';
+
+      const data = await supabaseFetch('schedules?id=eq.' + id + '&select=title,description');
+      const slot = data[0] || { title: '', description: '' };
+      const cleanDesc = (slot.description || '').replace(/\s*\(Booked by Owner\)/g, '').replace(/\s*\(Booked via AI by Owner\)/g, '').replace(/\s*\(Booked by Visitor - [^\)]+\)/g, '');
+
+      document.getElementById('editSlotTitle').value = slot.title || '';
+      document.getElementById('editSlotAgenda').value = cleanDesc || '';
+
       if (createdBy === 'owner') {
-        const choice = prompt('What do you want to edit?\n\nType 1 for Title\nType 2 for Agenda/Description');
-        if (choice === '1') {
-          const newTitle = prompt('Enter new title:');
-          if (!newTitle) return;
-          await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
-          reloadSlots();
-        } else if (choice === '2') {
-          const newDesc = prompt('Enter new agenda/description:');
-          if (!newDesc) return;
-          await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { description: newDesc });
-          reloadSlots();
-        }
+        document.getElementById('editAgendaGroup').style.display = 'block';
       } else {
-        const newTitle = prompt('Enter new title:');
-        if (!newTitle) return;
-        await supabaseFetch('schedules?id=eq.' + id, 'PATCH', { title: newTitle });
+        document.getElementById('editAgendaGroup').style.display = 'none';
+      }
+
+      document.getElementById('editSlotModal').classList.add('active');
+    }
+
+    function closeEditSlotModal() {
+      document.getElementById('editSlotModal').classList.remove('active');
+    }
+
+    async function submitEditSlot() {
+      const newTitle = document.getElementById('editSlotTitle').value.trim();
+      const newAgenda = document.getElementById('editSlotAgenda').value.trim();
+      const errEl = document.getElementById('editSlotError');
+
+      if (!newTitle) { errEl.style.display = 'block'; errEl.textContent = 'Title cannot be empty.'; return; }
+
+      const updateData = { title: newTitle };
+      if (currentEditCreatedBy === 'owner') {
+        updateData.description = newAgenda;
+      }
+
+      try {
+        await supabaseFetch('schedules?id=eq.' + currentEditSlotId, 'PATCH', updateData);
+        closeEditSlotModal();
         reloadSlots();
+      } catch (e) {
+        errEl.style.display = 'block';
+        errEl.textContent = 'Failed to save changes. Please try again.';
+        console.error(e);
       }
     }
     function rescheduleSlot(id) {
