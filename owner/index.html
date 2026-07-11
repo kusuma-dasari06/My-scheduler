@@ -76,6 +76,10 @@
     .word-count.error { color: #EF4444; }
     .modal-btns { display: flex; gap: 12px; justify-content: flex-end; }
     .error-msg { color: #EF4444; font-size: 13px; margin-bottom: 12px; display: none; }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
     @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .panel { border-right: none; border-bottom: 1px solid #334155; } }
   </style>
 </head>
